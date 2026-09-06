@@ -1,0 +1,6 @@
+{
+  "name": "Nikhil Paints & Hardware Jamshedpur",
+  "description": "Blinkit-style instant paint delivery for Jamshedpur featuring Asian Paints, Berger & Birla Opus, 7000+ shade codes, real-time tinting & order tracking, live paint expert chat, loyalty rewards, and project dashboard.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
