@@ -3,7 +3,7 @@ import { CartItem, DeliveryAddress, LoyaltyProfile } from "../types";
 import { JAMSHEDPUR_AREAS } from "../data/paintDatabase";
 import {
   ShoppingBag, Trash2, Plus, Minus, MapPin, ArrowRight,
-  CheckCircle2, Package, X, CreditCard, Crosshair // <-- Added Crosshair
+  CheckCircle2, Package, X, CreditCard, Crosshair
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
@@ -32,9 +32,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [deliveryOtpDisplay, setDeliveryOtpDisplay] = useState<string | null>(null);
   const [useLoyaltyCoins, setUseLoyaltyCoins] = useState(true);
 
-  // --- NEW: GPS States ---
+  // --- GPS States ---
   const [gettingLocation, setGettingLocation] = useState(false);
   const [locationSuccess, setLocationSuccess] = useState(false);
+
+  // --- NEW: GST States ---
+  const [hasGst, setHasGst] = useState(false);
+  const [gstin, setGstin] = useState("");
+  const [companyName, setCompanyName] = useState("");
 
   const [address, setAddress] = useState<DeliveryAddress>({
     fullName: "", phone: "", area: currentArea || "Mango",
@@ -59,7 +64,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   if (!isOpen) return null;
 
-  // --- NEW: GPS Geolocation Logic ---
+  // --- GPS Geolocation Logic ---
   const handleGetLocation = () => {
     setGettingLocation(true);
     if ("geolocation" in navigator) {
@@ -111,6 +116,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const handlePaymentBypass = async () => {
     if (!user) return alert("Please login or create an account to place your order.");
     if (!address.fullName || !address.phone || !address.streetAddress) return alert("Please fill in your complete delivery details.");
+    if (hasGst && (!gstin || !companyName)) return alert("Please fill in your Company Name and GSTIN.");
 
     try {
       setCheckoutStep("processing");
@@ -122,8 +128,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         street_address: address.streetAddress,
         area: address.area,
         landmark: address.landmark,
-        latitude: address.latitude,   // Save new GPS to profile
-        longitude: address.longitude  // Save new GPS to profile
+        latitude: address.latitude,
+        longitude: address.longitude 
       });
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -138,7 +144,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           status: "paid",
           items: cartItems,
           delivery_address: address,
-          delivery_otp: generatedOtp 
+          delivery_otp: generatedOtp,
+          // --- NEW: Injecting GST Details ---
+          gst_details: hasGst ? { hasGst: true, gstin, companyName } : { hasGst: false }
         })
         .select().single();
 
@@ -182,7 +190,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             </div>
 
             <button onClick={() => { closeAndReset(); if (onNavigateToOrders) onNavigateToOrders(); }} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-xl font-bold shadow-lg shadow-slate-900/25 transition-all active:scale-[0.98]">
-              Track My Order
+              Track My Order & View Invoice
             </button>
             <button onClick={closeAndReset} className="mt-6 text-sm font-bold text-slate-400 hover:text-slate-700 transition-colors">
               Continue Shopping
@@ -257,7 +265,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       <span>Delivery Details</span>
                     </h4>
                     
-                    {/* --- GPS BUTTON ADDED DIRECTLY IN CART --- */}
+                    {/* --- GPS BUTTON --- */}
                     <button
                       type="button"
                       onClick={handleGetLocation}
@@ -299,6 +307,40 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     </div>
                     <input type="text" placeholder="Complete Street Address" value={address.streetAddress} onChange={(e) => setAddress({ ...address, streetAddress: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none" />
                   </div>
+
+                  {/* --- NEW: GST INVOICE SECTION --- */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={hasGst}
+                        onChange={(e) => setHasGst(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 rounded cursor-pointer border-slate-300"
+                      />
+                      <span className="text-sm font-bold text-slate-700">I need a GST Invoice (B2B)</span>
+                    </label>
+                    
+                    {hasGst && (
+                      <div className="mt-4 space-y-3 animate-in fade-in slide-in-from-top-2">
+                        <input 
+                          type="text" 
+                          placeholder="Company Name" 
+                          value={companyName}
+                          onChange={(e) => setCompanyName(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-indigo-500"
+                        />
+                        <input 
+                          type="text" 
+                          placeholder="GSTIN Number (15 digits)" 
+                          value={gstin}
+                          onChange={(e) => setGstin(e.target.value.toUpperCase())}
+                          maxLength={15}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-indigo-500 uppercase"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {/* -------------------------------------- */}
 
                   <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-2.5 text-xs text-slate-600">
                     <h4 className="font-extrabold text-slate-900 tracking-tight text-sm mb-3">Bill Summary</h4>

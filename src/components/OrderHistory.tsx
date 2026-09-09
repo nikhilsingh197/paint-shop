@@ -14,8 +14,10 @@ import {
   ShoppingBag,
   MapPin,
   KeyRound,
-  Navigation
+  Navigation,
+  FileText
 } from "lucide-react";
+import { InvoiceModal } from "./InvoiceModal"; 
 
 const ORDER_STATUSES = [
   { id: "paid", label: "Order Placed", icon: Clock, color: "text-rose-600", bg: "bg-rose-100", border: "border-rose-200" },
@@ -27,7 +29,6 @@ const ORDER_STATUSES = [
   { id: "delivered", label: "Delivered", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-100", border: "border-emerald-200" },
 ];
 
-// 1. FIX: Added proper Props interface to satisfy App.tsx and fix the Vite build crash
 interface OrderHistoryProps {
   orders?: any[]; 
   onReorder?: (order: any) => void;
@@ -38,6 +39,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
   const { user } = useAuth();
   const [dbOrders, setDbOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewingInvoice, setViewingInvoice] = useState<any | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -47,10 +49,9 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
     }
   }, [user]);
 
- const fetchOrders = async () => {
+  const fetchOrders = async () => {
     setLoading(true);
     
-    // 1. Fetch just the orders first so it NEVER crashes
     const { data: ordersData, error } = await supabase
       .from("orders")
       .select("*")
@@ -63,12 +64,10 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
       return;
     }
 
-    // 2. Extract the driver IDs from the orders
     const partnerIds = ordersData
       .map(o => o.delivery_partner_id)
       .filter(Boolean);
 
-    // 3. If there are drivers, fetch their names/phones manually
     if (partnerIds.length > 0) {
       const { data: profilesData } = await supabase
         .from("profiles")
@@ -76,7 +75,6 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
         .in("id", partnerIds);
 
       if (profilesData) {
-        // Match the drivers back to their specific orders
         const profileMap = profilesData.reduce((acc, profile) => {
           acc[profile.id] = profile;
           return acc;
@@ -117,7 +115,6 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
     );
   }
 
-  // Use database orders if available, otherwise fallback to local App.tsx state so the UI never breaks
   const displayOrders = dbOrders.length > 0 ? dbOrders : orders;
 
   return (
@@ -142,7 +139,6 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
 
             return (
               <div key={order.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                {/* Header Section */}
                 <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Order ID</div>
@@ -166,10 +162,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
                   </div>
                 </div>
 
-                {/* Body Details Section */}
                 <div className="p-6">
-                  
-                  {/* --- DRIVER INFO DISPLAY --- */}
                   {order.profiles && (
                     <div className="mb-6 flex items-center gap-3 bg-cyan-50/50 border border-cyan-100 p-3 rounded-xl w-fit">
                       <div className="w-10 h-10 bg-cyan-100 text-cyan-600 rounded-full flex items-center justify-center shrink-0">
@@ -186,7 +179,6 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Items List */}
                     <div>
                       <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2">
                         <Package className="w-4 h-4 text-indigo-500" /> Package Contents
@@ -212,7 +204,6 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
                       </div>
                     </div>
 
-                    {/* Delivery Address Info */}
                     <div>
                       <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-rose-500" /> Delivered To
@@ -226,7 +217,6 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
                     </div>
                   </div>
 
-                  {/* --- CONDITIONAL OTP & ACTIONS DISPLAY --- */}
                   {!isDelivered ? (
                     <div className="mt-6 p-4 sm:p-5 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col lg:flex-row items-center justify-between gap-4">
                       
@@ -259,10 +249,17 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
                           className="flex items-center justify-center gap-2 bg-white text-slate-700 px-5 py-3 rounded-xl text-xs font-bold border border-slate-200 shadow-sm hover:bg-slate-50 hover:text-emerald-600 transition-colors whitespace-nowrap cursor-pointer w-full sm:w-auto"
                         >
                           <PhoneCall className="w-4 h-4" />
-                          Call Store Support
+                          Call Support
                         </a>
 
-                        {/* --- 2. FIX: LIVE TRACKING BUTTON NOW GUARANTEED TO RENDER --- */}
+                        <button
+                          onClick={() => setViewingInvoice(order)}
+                          className="flex items-center justify-center gap-2 bg-slate-800 text-white px-5 py-3 rounded-xl text-xs font-bold shadow-md hover:bg-slate-900 transition-colors whitespace-nowrap cursor-pointer w-full sm:w-auto"
+                        >
+                          <FileText className="w-4 h-4" />
+                          View Invoice
+                        </button>
+
                         <button
                           onClick={() => {
                             if (onTrackOrder) {
@@ -279,8 +276,15 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-6 flex justify-end pt-4 border-t border-slate-100">
-                       <a 
+                    <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
+                      <button
+                        onClick={() => setViewingInvoice(order)}
+                        className="flex items-center justify-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-slate-900 transition-colors whitespace-nowrap cursor-pointer"
+                      >
+                        <FileText className="w-4 h-4" />
+                        View Invoice
+                      </button>
+                      <a 
                         href="tel:+917004734407" 
                         className="flex items-center justify-center gap-2 bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 shadow-sm hover:bg-slate-100 transition-colors whitespace-nowrap cursor-pointer"
                       >
@@ -296,6 +300,13 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
           })
         )}
       </div>
+
+      {viewingInvoice && (
+        <InvoiceModal 
+          order={viewingInvoice} 
+          onClose={() => setViewingInvoice(null)} 
+        />
+      )}
     </div>
   );
 };
