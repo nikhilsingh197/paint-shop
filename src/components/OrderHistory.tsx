@@ -13,7 +13,8 @@ import {
   PhoneCall,
   ShoppingBag,
   MapPin,
-  KeyRound 
+  KeyRound,
+  Navigation
 } from "lucide-react";
 
 const ORDER_STATUSES = [
@@ -26,9 +27,16 @@ const ORDER_STATUSES = [
   { id: "delivered", label: "Delivered", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-100", border: "border-emerald-200" },
 ];
 
-export const OrderHistory: React.FC = () => {
+// 1. FIX: Added proper Props interface to satisfy App.tsx and fix the Vite build crash
+interface OrderHistoryProps {
+  orders?: any[]; 
+  onReorder?: (order: any) => void;
+  onTrackOrder?: (order: any) => void;
+}
+
+export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReorder, onTrackOrder }) => {
   const { user } = useAuth();
-  const [orders, setOrders] = useState<any[]>([]);
+  const [dbOrders, setDbOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,17 +47,50 @@ export const OrderHistory: React.FC = () => {
     }
   }, [user]);
 
-  const fetchOrders = async () => {
+ const fetchOrders = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    
+    // 1. Fetch just the orders first so it NEVER crashes
+    const { data: ordersData, error } = await supabase
       .from("orders")
       .select("*")
       .eq("user_id", user?.id)
       .order("created_at", { ascending: false });
 
-    if (!error && data) {
-      setOrders(data);
+    if (error || !ordersData) {
+      console.error("Failed to fetch orders:", error);
+      setLoading(false);
+      return;
     }
+
+    // 2. Extract the driver IDs from the orders
+    const partnerIds = ordersData
+      .map(o => o.delivery_partner_id)
+      .filter(Boolean);
+
+    // 3. If there are drivers, fetch their names/phones manually
+    if (partnerIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, full_name, phone")
+        .in("id", partnerIds);
+
+      if (profilesData) {
+        // Match the drivers back to their specific orders
+        const profileMap = profilesData.reduce((acc, profile) => {
+          acc[profile.id] = profile;
+          return acc;
+        }, {} as Record<string, any>);
+
+        ordersData.forEach(order => {
+          if (order.delivery_partner_id) {
+            order.profiles = profileMap[order.delivery_partner_id];
+          }
+        });
+      }
+    }
+
+    setDbOrders(ordersData);
     setLoading(false);
   };
 
@@ -76,6 +117,9 @@ export const OrderHistory: React.FC = () => {
     );
   }
 
+  // Use database orders if available, otherwise fallback to local App.tsx state so the UI never breaks
+  const displayOrders = dbOrders.length > 0 ? dbOrders : orders;
+
   return (
     <div className="max-w-4xl mx-auto py-6">
       <div className="mb-8">
@@ -84,18 +128,16 @@ export const OrderHistory: React.FC = () => {
       </div>
 
       <div className="space-y-6">
-        {orders.length === 0 ? (
+        {displayOrders.length === 0 ? (
           <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center shadow-sm">
             <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <h3 className="text-lg font-bold text-slate-800">No orders found</h3>
             <p className="text-slate-500 text-xs mt-1">When you buy paints, your order history will appear here.</p>
           </div>
         ) : (
-          orders.map((order) => {
+          displayOrders.map((order) => {
             const statusConfig = getStatusConfig(order.status);
             const StatusIcon = statusConfig.icon;
-            
-            // CHECK STATUS: Is it delivered?
             const isDelivered = order.status === "delivered";
 
             return (
@@ -109,14 +151,14 @@ export const OrderHistory: React.FC = () => {
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date Placed</div>
                     <div className="text-sm font-bold text-slate-700">
-                      {new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date(order.created_at || order.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </div>
                   </div>
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Amount</div>
-                    <div className="text-sm font-black text-emerald-600">₹{order.total_amount}</div>
+                    <div className="text-sm font-black text-emerald-600">₹{order.total_amount || order.total}</div>
                   </div>
-                  <div>
+                  <div className="flex flex-col items-end">
                     <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border ${statusConfig.bg} ${statusConfig.color} ${statusConfig.border}`}>
                       <StatusIcon className="w-3.5 h-3.5" />
                       {statusConfig.label}
@@ -126,6 +168,23 @@ export const OrderHistory: React.FC = () => {
 
                 {/* Body Details Section */}
                 <div className="p-6">
+                  
+                  {/* --- DRIVER INFO DISPLAY --- */}
+                  {order.profiles && (
+                    <div className="mb-6 flex items-center gap-3 bg-cyan-50/50 border border-cyan-100 p-3 rounded-xl w-fit">
+                      <div className="w-10 h-10 bg-cyan-100 text-cyan-600 rounded-full flex items-center justify-center shrink-0">
+                        <UserCheck className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold text-cyan-600 uppercase tracking-wider">Delivery Agent</div>
+                        <div className="text-sm font-black text-slate-800">{order.profiles.full_name || "Assigned Driver"}</div>
+                        <a href={`tel:${order.profiles.phone}`} className="text-xs font-bold text-cyan-700 hover:underline">
+                          {order.profiles.phone || "Contact via Support"}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Items List */}
                     <div>
@@ -159,45 +218,67 @@ export const OrderHistory: React.FC = () => {
                         <MapPin className="w-4 h-4 text-rose-500" /> Delivered To
                       </h4>
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm text-slate-600 leading-relaxed">
-                        <span className="font-bold text-slate-900">{order.delivery_address?.fullName}</span><br />
+                        <span className="font-bold text-slate-900">{order.delivery_address?.fullName || order.customer_name}</span><br />
                         {order.delivery_address?.phone}<br />
-                        <span className="font-bold">{order.delivery_address?.area}</span>, {order.delivery_address?.streetAddress}
+                        <span className="font-bold">{order.delivery_address?.area || order.area}</span>, {order.delivery_address?.streetAddress || ""}
                         {order.delivery_address?.landmark && <span><br />Landmark: {order.delivery_address?.landmark}</span>}
                       </div>
                     </div>
                   </div>
 
-                  {/* --- CONDITIONAL OTP DISPLAY --- */}
-                  {/* Shows OTP ONLY if the order is NOT delivered yet */}
-                  {!isDelivered && order.delivery_otp ? (
-                    <div className="mt-6 p-4 sm:p-5 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0">
-                          <KeyRound className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-0.5">
-                            Secure Delivery OTP
-                          </div>
-                          <div className="text-2xl sm:text-3xl font-black text-indigo-700 tracking-[0.15em]">
-                            {order.delivery_otp}
-                          </div>
-                          <div className="text-[10px] text-indigo-500 font-bold mt-1">
-                            Share this OTP with the delivery partner upon arrival.
-                          </div>
-                        </div>
-                      </div>
+                  {/* --- CONDITIONAL OTP & ACTIONS DISPLAY --- */}
+                  {!isDelivered ? (
+                    <div className="mt-6 p-4 sm:p-5 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col lg:flex-row items-center justify-between gap-4">
                       
-                      <a 
-                        href="tel:+917004734407" 
-                        className="flex items-center justify-center gap-2 bg-white text-slate-700 px-5 py-3 rounded-xl text-xs font-bold border border-slate-200 shadow-sm hover:bg-slate-50 hover:text-emerald-600 transition-colors whitespace-nowrap cursor-pointer w-full sm:w-auto"
-                      >
-                        <PhoneCall className="w-4 h-4" />
-                        Call Store Support
-                      </a>
+                      {order.delivery_otp ? (
+                        <div className="flex items-center gap-4 w-full lg:w-auto">
+                          <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0">
+                            <KeyRound className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-0.5">
+                              Secure Delivery OTP
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-black text-indigo-700 tracking-[0.15em]">
+                              {order.delivery_otp}
+                            </div>
+                            <div className="text-[10px] text-indigo-500 font-bold mt-1">
+                              Share this OTP with the delivery partner.
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full lg:w-auto text-sm font-bold text-indigo-700">
+                          Preparing your order for dispatch.
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto mt-4 lg:mt-0">
+                        <a 
+                          href="tel:+917004734407" 
+                          className="flex items-center justify-center gap-2 bg-white text-slate-700 px-5 py-3 rounded-xl text-xs font-bold border border-slate-200 shadow-sm hover:bg-slate-50 hover:text-emerald-600 transition-colors whitespace-nowrap cursor-pointer w-full sm:w-auto"
+                        >
+                          <PhoneCall className="w-4 h-4" />
+                          Call Store Support
+                        </a>
+
+                        {/* --- 2. FIX: LIVE TRACKING BUTTON NOW GUARANTEED TO RENDER --- */}
+                        <button
+                          onClick={() => {
+                            if (onTrackOrder) {
+                              onTrackOrder(order);
+                            } else {
+                              alert("Live tracking component is still loading...");
+                            }
+                          }}
+                          className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-3 rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-colors whitespace-nowrap cursor-pointer w-full sm:w-auto"
+                        >
+                          <Navigation className="w-4 h-4" />
+                          Live Tracking
+                        </button>
+                      </div>
                     </div>
                   ) : (
-                    /* Shows just the support button if order is successfully delivered */
                     <div className="mt-6 flex justify-end pt-4 border-t border-slate-100">
                        <a 
                         href="tel:+917004734407" 
