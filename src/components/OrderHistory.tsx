@@ -2,22 +2,29 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import {
-  Package,
-  Truck,
-  CheckCircle2,
-  Clock,
-  PaintBucket,
-  Droplet,
-  Box,
-  UserCheck,
-  PhoneCall,
-  ShoppingBag,
-  MapPin,
-  KeyRound,
-  Navigation,
-  FileText
+  Package, Truck, CheckCircle2, Clock, PaintBucket,
+  Droplet, Box, UserCheck, PhoneCall, ShoppingBag,
+  MapPin, KeyRound, Navigation, FileText
 } from "lucide-react";
 import { InvoiceModal } from "./InvoiceModal"; 
+
+// --- BULLETPROOF DATA HELPERS ---
+const getSafeId = (order: any) => {
+  const id = order?.id || order?.order_id || order?.orderId;
+  if (!id) return "PENDING";
+  const str = String(id);
+  return str.includes("-") ? str.split("-")[0].toUpperCase() : str.slice(0, 8).toUpperCase();
+};
+
+const getSafeDate = (order: any) => {
+  const rawDate = order?.created_at || order?.timestamp || order?.date;
+  if (!rawDate) return "N/A";
+  try {
+    return new Date(rawDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch {
+    return "N/A";
+  }
+};
 
 const ORDER_STATUSES = [
   { id: "paid", label: "Order Placed", icon: Clock, color: "text-rose-600", bg: "bg-rose-100", border: "border-rose-200" },
@@ -37,6 +44,8 @@ interface OrderHistoryProps {
 
 export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReorder, onTrackOrder }) => {
   const { user } = useAuth();
+  
+  // We ONLY use this state now. No fallbacks to local dummy data.
   const [dbOrders, setDbOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingInvoice, setViewingInvoice] = useState<any | null>(null);
@@ -53,13 +62,21 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
     setLoading(true);
     
     const { data: ordersData, error } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("user_id", user?.id)
-      .order("created_at", { ascending: false });
+  .from("orders")
+  .select("*")
+  .eq("user_id", user?.id)
+  .order("created_at", { ascending: false });
 
-    if (error || !ordersData) {
-      console.error("Failed to fetch orders:", error);
+console.log("ACTUAL DB DATA:", ordersData);
+    if (error) {
+      console.error("Failed to fetch orders from Supabase:", error);
+      setDbOrders([]); // Force empty on error
+      setLoading(false);
+      return;
+    }
+
+    if (!ordersData || ordersData.length === 0) {
+      setDbOrders([]); // Force empty if no orders exist
       setLoading(false);
       return;
     }
@@ -115,7 +132,8 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
     );
   }
 
-  const displayOrders = dbOrders.length > 0 ? dbOrders : orders;
+  // --- THE FIX: STRICTLY USE DATABASE ORDERS ONLY ---
+  const displayOrders = dbOrders; 
 
   return (
     <div className="max-w-4xl mx-auto py-6">
@@ -142,13 +160,11 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
                 <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Order ID</div>
-                    <div className="text-sm font-black text-slate-900">#{order.id.split("-")[0].toUpperCase()}</div>
+                    <div className="text-sm font-black text-slate-900">#{getSafeId(order)}</div>
                   </div>
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date Placed</div>
-                    <div className="text-sm font-bold text-slate-700">
-                      {new Date(order.created_at || order.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </div>
+                    <div className="text-sm font-bold text-slate-700">{getSafeDate(order)}</div>
                   </div>
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Amount</div>
@@ -209,7 +225,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReord
                         <MapPin className="w-4 h-4 text-rose-500" /> Delivered To
                       </h4>
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm text-slate-600 leading-relaxed">
-                        <span className="font-bold text-slate-900">{order.delivery_address?.fullName || order.customer_name}</span><br />
+                        <span className="font-bold text-slate-900">{order.delivery_address?.fullName || order.customer_name || "Customer"}</span><br />
                         {order.delivery_address?.phone}<br />
                         <span className="font-bold">{order.delivery_address?.area || order.area}</span>, {order.delivery_address?.streetAddress || ""}
                         {order.delivery_address?.landmark && <span><br />Landmark: {order.delivery_address?.landmark}</span>}

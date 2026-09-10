@@ -23,7 +23,9 @@ import {
   Trash2,
   RefreshCw,
   AlertCircle,
-  Shield // <-- Required for the assignment icon
+  Shield,
+  Users, // <-- Added for Leads
+  ClipboardList // <-- Added for Leads
 } from "lucide-react";
 
 const ORDER_STATUSES = [
@@ -37,7 +39,7 @@ const ORDER_STATUSES = [
 ];
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"orders" | "inventory">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "inventory" | "leads">("orders"); // <-- Restored "leads"
 
   // --- Orders & Delivery Partners State ---
   const [orders, setOrders] = useState<any[]>([]);
@@ -53,12 +55,18 @@ export default function AdminDashboard() {
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
   const [savingProduct, setSavingProduct] = useState(false);
 
+  // --- Leads State ---
+  const [leads, setLeads] = useState<any[]>([]);
+  const [loadingLeads, setLoadingLeads] = useState(true);
+
   useEffect(() => {
     if (activeTab === "orders") {
       fetchOrders();
-      fetchDeliveryPartners(); // Fetch partners when on orders tab
+      fetchDeliveryPartners(); 
     } else if (activeTab === "inventory") {
       fetchProducts();
+    } else if (activeTab === "leads") {
+      fetchLeads(); // <-- Fetch leads when tab is active
     }
   }, [activeTab]);
 
@@ -69,7 +77,7 @@ export default function AdminDashboard() {
     setLoadingOrders(true);
     const { data, error } = await supabase
       .from("orders")
-      .select("*, profiles!delivery_partner_id(full_name, phone)") // Join partner details
+      .select("*, profiles!delivery_partner_id(full_name, phone)") 
       .order("created_at", { ascending: false });
 
     if (!error) setOrders(data || []);
@@ -77,7 +85,6 @@ export default function AdminDashboard() {
   };
 
   const fetchDeliveryPartners = async () => {
-    // Fetch users who are explicitly marked as delivery partners
     const { data, error } = await supabase
       .from("profiles")
       .select("id, full_name, phone")
@@ -99,7 +106,6 @@ export default function AdminDashboard() {
   const assignDeliveryPartner = async (orderId: string, partnerId: string) => {
     setUpdatingId(orderId);
     
-    // Assigning automatically changes status to "assigned"
     const { error } = await supabase
       .from("orders")
       .update({ 
@@ -111,7 +117,7 @@ export default function AdminDashboard() {
     if (error) {
       alert("Failed to assign partner: " + error.message);
     } else {
-      fetchOrders(); // Re-fetch to get the newly joined partner details
+      fetchOrders(); 
     }
     setUpdatingId(null);
   };
@@ -137,6 +143,7 @@ export default function AdminDashboard() {
   const handleCreateProduct = () => {
     setEditingProduct({
       id: `NK-PROD-${Date.now()}`, name: "", brand: "Asian Paints", category: "Interior Emulsion", tagline: "", finish: "Matt", image: "",
+      hsn_code: "3208", // <-- Default HSN code for paints
       requiresShade: true, is_active: true, rating: 4.5, reviewsCount: 0, deliveryMinutes: 35, coveragePerLiter: "100 sq.ft / 2 coats",
       washability: "Medium", features: JSON.stringify(["Computerized tinting available", "Fast delivery"]),
       packs: [{ size: "1 Litre", volumeLiters: 1, price: 500, originalPrice: 600, inStock: true }]
@@ -157,6 +164,7 @@ export default function AdminDashboard() {
     const { error } = await supabase.from("products").upsert({
       id: editingProduct.id, name: editingProduct.name, brand: editingProduct.brand, category: editingProduct.category, tagline: editingProduct.tagline || "",
       finish: editingProduct.finish || "Matt", image: editingProduct.image || "", requiresShade: editingProduct.requiresShade ?? true,
+      hsn_code: editingProduct.hsn_code || "3208", // <-- Saving HSN code
       is_active: editingProduct.is_active ?? true, rating: editingProduct.rating || 4.5, reviewsCount: editingProduct.reviewsCount || 0,
       deliveryMinutes: editingProduct.deliveryMinutes || 35, coveragePerLiter: editingProduct.coveragePerLiter || "", washability: editingProduct.washability || "Medium",
       features: typeof editingProduct.features === 'string' ? editingProduct.features : JSON.stringify(editingProduct.features || []),
@@ -182,25 +190,46 @@ export default function AdminDashboard() {
 
   const filteredInventory = products.filter(p => (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || (p.brand || '').toLowerCase().includes(searchQuery.toLowerCase()));
 
+  // =====================
+  // LEADS LOGIC
+  // =====================
+  const fetchLeads = async () => {
+    setLoadingLeads(true);
+    const { data, error } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
+    if (!error) setLeads(data || []);
+    setLoadingLeads(false);
+  };
+
+  const updateLeadStatus = async (id: string, currentStatus: string) => {
+    const nextStatus = currentStatus === 'New' ? 'Contacted' : currentStatus === 'Contacted' ? 'Converted' : 'New';
+    const { error } = await supabase.from("leads").update({ status: nextStatus }).eq("id", id);
+    if (!error) fetchLeads();
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-6">
       
       {/* Top Header & Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-lg shrink-0">
-            {activeTab === "orders" ? <Package className="w-7 h-7" /> : <Tags className="w-7 h-7" />}
+            {activeTab === "orders" && <Package className="w-7 h-7" />}
+            {activeTab === "inventory" && <Tags className="w-7 h-7" />}
+            {activeTab === "leads" && <Users className="w-7 h-7" />}
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Store Owner Panel</h1>
             <p className="text-slate-500 font-medium mt-1 text-xs sm:text-sm">
-              {activeTab === "orders" ? "Manage pipeline and fulfill customer deliveries." : "Manage paint database, pricing, and stock."}
+              {activeTab === "orders" && "Manage pipeline and fulfill customer deliveries."}
+              {activeTab === "inventory" && "Manage paint database, pricing, and stock."}
+              {activeTab === "leads" && "Manage service inquiries and waterproofing leads."}
             </p>
           </div>
         </div>
-        <div className="flex bg-slate-100 p-1.5 rounded-xl shrink-0">
+        <div className="flex flex-wrap bg-slate-100 p-1.5 rounded-xl shrink-0 gap-1">
           <button onClick={() => setActiveTab("orders")} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "orders" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Live Orders</button>
           <button onClick={() => setActiveTab("inventory")} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "inventory" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Inventory</button>
+          <button onClick={() => setActiveTab("leads")} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "leads" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Service Leads</button>
         </div>
       </div>
 
@@ -238,8 +267,7 @@ export default function AdminDashboard() {
                           <tr className={`hover:bg-slate-50 transition-colors ${isExpanded ? "bg-slate-50" : ""}`}>
                             <td className="p-5">
                               <div className="font-black text-slate-900 text-base">#{order.id.split("-")[0].toUpperCase()}</div>
-                              <div className="text-xs text-slate-500 mt-1 font-medium">{new Date(order.created_at).toLocaleString()}</div>
-                              {/* Display assigned partner if exists */}
+                              <div className="text-xs text-slate-500 mt-1 font-medium">{new Date(order.created_at).toLocaleString('en-IN')}</div>
                               {order.profiles && (
                                 <div className="mt-2 inline-flex items-center gap-1 bg-cyan-50 text-cyan-700 px-2 py-0.5 rounded text-[10px] font-bold border border-cyan-100">
                                   <Truck className="w-3 h-3" /> Assigned to: {order.profiles.full_name || 'Partner'}
@@ -270,7 +298,6 @@ export default function AdminDashboard() {
                               <td colSpan={5} className="p-0 border-b-4 border-slate-200">
                                 <div className="bg-slate-50 p-6 flex flex-col lg:flex-row gap-6 shadow-inner">
                                   
-                                  {/* Left: Delivery Details */}
                                   <div className="flex-1 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                                     <h3 className="font-extrabold text-slate-900 mb-4 flex items-center gap-2"><MapPin className="w-5 h-5 text-rose-500" /> Delivery Details</h3>
                                     <div className="space-y-3 text-sm">
@@ -293,7 +320,6 @@ export default function AdminDashboard() {
                                     </div>
                                   </div>
 
-                                  {/* Middle: Items to Fulfill */}
                                   <div className="flex-1 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                                     <h3 className="font-extrabold text-slate-900 mb-4 flex items-center gap-2"><Package className="w-5 h-5 text-indigo-500" /> Items to Fulfill</h3>
                                     <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2">
@@ -315,10 +341,7 @@ export default function AdminDashboard() {
                                     </div>
                                   </div>
 
-                                  {/* Right: Actions & Assignment */}
                                   <div className="flex-1 bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl text-white flex flex-col justify-center gap-6">
-                                    
-                                    {/* Partner Assignment Section */}
                                     <div>
                                       <h3 className="font-extrabold text-slate-100 mb-2 flex items-center gap-2">
                                         <Shield className="w-4 h-4 text-cyan-400" /> Assign Delivery Partner
@@ -339,7 +362,6 @@ export default function AdminDashboard() {
                                       </select>
                                     </div>
 
-                                    {/* Order Status Section */}
                                     <div>
                                       <h3 className="font-extrabold text-slate-100 mb-2">Update Pipeline Status</h3>
                                       <select
@@ -465,6 +487,68 @@ export default function AdminDashboard() {
       )}
 
       {/* ======================= */}
+      {/* TAB 3: LEADS UI         */}
+      {/* ======================= */}
+      {activeTab === "leads" && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-4 border-b border-slate-200 bg-slate-50">
+            <h2 className="font-bold text-slate-800 flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-indigo-600" /> Customer Inquiries
+            </h2>
+          </div>
+          {loadingLeads ? (
+            <div className="flex flex-col items-center justify-center py-20"><div className="w-12 h-12 border-4 border-slate-200 border-t-indigo-500 rounded-full animate-spin mb-4"></div><p className="text-slate-500 font-bold">Loading Leads...</p></div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                    <th className="p-5 font-bold">Date</th>
+                    <th className="p-5 font-bold">Customer Details</th>
+                    <th className="p-5 font-bold">Service Requested</th>
+                    <th className="p-5 font-bold text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                  {leads.length === 0 ? (
+                    <tr><td colSpan={4} className="p-10 text-center text-slate-500 font-bold">No leads found.</td></tr>
+                  ) : (
+                    leads.map((lead) => (
+                      <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-5 text-xs text-slate-500 font-medium">
+                          {new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td className="p-5">
+                          <div className="font-bold text-slate-900">{lead.name || "N/A"}</div>
+                          <div className="text-xs text-slate-500 mt-1">{lead.phone || "No Phone"}</div>
+                          {lead.area && <div className="text-[10px] text-slate-400 mt-0.5">{lead.area}</div>}
+                        </td>
+                        <td className="p-5 font-bold text-slate-700">
+                          {lead.service || lead.service_type || "Painting"}
+                        </td>
+                        <td className="p-5 text-center">
+                          <button 
+                            onClick={() => updateLeadStatus(lead.id, lead.status || 'New')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer w-24 text-center ${
+                              (lead.status || 'New') === 'New' ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 
+                              (lead.status === 'Contacted') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 
+                              'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                            }`}
+                          >
+                            {lead.status || 'New'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ======================= */}
       {/* EDIT PRODUCT MODAL      */}
       {/* ======================= */}
       {editingProduct && (
@@ -509,10 +593,6 @@ export default function AdminDashboard() {
                       <option value="Brushes & Tools">Brushes & Tools</option>
                     </select>
                   </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Tagline / Short Description</label>
-                    <input type="text" value={editingProduct.tagline} onChange={e => setEditingProduct({...editingProduct, tagline: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 bg-slate-50" />
-                  </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Finish Type</label>
                     <select value={editingProduct.finish} onChange={e => setEditingProduct({...editingProduct, finish: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 bg-slate-50">
@@ -523,7 +603,19 @@ export default function AdminDashboard() {
                       <option value="Rough Texture">Rough Texture</option>
                     </select>
                   </div>
+
+                  {/* --- NEW HSN CODE FIELD --- */}
                   <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">HSN/SAC Code</label>
+                    <input type="text" value={editingProduct.hsn_code || ''} onChange={e => setEditingProduct({...editingProduct, hsn_code: e.target.value})} placeholder="e.g. 3208" className="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 bg-slate-50" />
+                  </div>
+                  {/* --------------------------- */}
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Tagline / Short Description</label>
+                    <input type="text" value={editingProduct.tagline} onChange={e => setEditingProduct({...editingProduct, tagline: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 bg-slate-50" />
+                  </div>
+                  <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-slate-700 mb-1">Image URL</label>
                     <input type="url" value={editingProduct.image} onChange={e => setEditingProduct({...editingProduct, image: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 bg-slate-50" />
                   </div>

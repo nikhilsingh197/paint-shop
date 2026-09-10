@@ -1,11 +1,11 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "./AuthContext";
-import { Product, ProductPack, CartItem } from "../types";
 
+// Using 'any' here temporarily to prevent TypeScript errors while we map the new fields
 interface CartContextType {
-  cartItems: CartItem[];
-  addToCart: (product: Product, pack: ProductPack) => void;
+  cartItems: any[];
+  addToCart: (product: any, pack: any, shade?: any) => void;
   removeFromCart: (productId: string, packSize: string) => void;
   clearCart: () => void;
   checkout: () => Promise<void>;
@@ -15,25 +15,41 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cartItems, setCartItems] = useState<any[]>([]);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { user } = useAuth();
 
-  const addToCart = (product: Product, pack: ProductPack) => {
+  // --- UPDATED: Now accepts shade and saves HSN code ---
+  const addToCart = (product: any, pack: any, shade?: any) => {
     setCartItems((prev) => {
-      const existingItem = prev.find(
-        (item) =>
-          item.product.id === product.id && item.pack.size === pack.size,
-      );
+      // Create a unique ID for the cart item (so different shades of the same paint don't merge)
+      const cartItemId = `${product.id}-${pack.size}-${shade ? shade.code : "default"}`;
+
+      const existingItem = prev.find((item) => item.id === cartItemId);
+
       if (existingItem) {
         return prev.map((item) =>
-          item === existingItem
+          item.id === cartItemId
             ? { ...item, quantity: item.quantity + 1 }
             : item,
         );
       }
-      // Assuming a default tinting charge of 0 for standard paints
-      return [...prev, { product, pack, quantity: 1, tintingCharge: 0 }];
+
+      // Add the new item with ALL the fields expected by CartDrawer & Invoice
+      return [
+        ...prev, 
+        { 
+          id: cartItemId,
+          product: product, // Kept for safety
+          productName: product.name,
+          image: product.image,
+          pack: pack, 
+          quantity: 1, 
+          tintingCharge: 0,
+          selectedShade: shade,
+          hsn_code: product.hsn_code || "3208" // <-- HSN Code explicitly saved to the order!
+        }
+      ];
     });
   };
 
