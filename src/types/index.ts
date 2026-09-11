@@ -135,7 +135,22 @@ export interface PaintingProject {
   }[];
   contractorName?: string;
   contractorPhone?: string;
+  customerPhone?: string;
   notes: string;
+}
+
+export interface PaintingLead {
+  id: string;
+  user_id?: string;
+  full_name: string;
+  phone: string;
+  property_type: string;
+  service_type: string;
+  address: string;
+  preferred_date: string;
+  status: string; // e.g. "Pending", "contractor_assigned"
+  assigned_contractor?: string; // e.g. "sunil kumar -7856015521"
+  created_at?: string;
 }
 
 export interface LoyaltyProfile {

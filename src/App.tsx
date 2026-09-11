@@ -34,7 +34,7 @@ import { LiveOrderTracking } from "./components/LiveOrderTracking";
 import { PaintConsultantChat } from "./components/PaintConsultantChat";
 import { LoyaltyRewards } from "./components/LoyaltyRewards";
 import { OrderHistory } from "./components/OrderHistory";
-import { ProjectDashboard } from "./components/ProjectDashboard";
+import { PaintingServices } from "./components/PaintingServices";
 import { NotificationCenter } from "./components/NotificationCenter";
 import DeliveryDashboard from "./components/DeliveryDashboard"; 
 import {
@@ -349,7 +349,14 @@ export default function App() {
 
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-32">
-        {activeTab === "admin" && isAdmin && <AdminDashboard />}
+        {activeTab === "admin" && isAdmin && (
+          <AdminDashboard 
+            projects={projects}
+            onUpdateProject={(id, name, phone) => {
+              setProjects(prev => prev.map(p => p.id === id ? { ...p, contractorName: name, contractorPhone: phone } : p))
+            }}
+          />
+        )}
         {activeTab === "delivery" && <DeliveryDashboard />}
 
         {activeTab === "store" && (
@@ -495,7 +502,7 @@ export default function App() {
               <div className="flex items-end justify-between gap-3 mb-3 px-1">
                 <div>
                   <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Curated for you</p>
-                  <h2 className="text-lg sm:text-2xl font-black tracking-tight">Best sellers & everyday essentials</h2>
+                  <h2 className="text-lg sm:text-2xl font-black tracking-tight">Best sellers 👌</h2>
                 </div>
                 <div className="hidden sm:block text-right">
                   <div className="text-[10px] font-black text-emerald-700">{filteredProducts.length} products</div>
@@ -542,31 +549,19 @@ export default function App() {
         )}
 
         {activeTab === "history" && <OrderHistory orders={orders} onReorder={handleReorder} onTrackOrder={setTrackingOrder} />}
-        {activeTab === "projects" && <ProjectDashboard projects={projects} onCreateProject={(newProj) => setProjects((prev) => [newProj, ...prev])} onQuickOrderPaint={(product, shade) => handleAddToCart(product, product.packs[0], shade)} />}
         {activeTab === "loyalty" && <LoyaltyRewards loyalty={loyalty} />}
         {activeTab === "notifications" && <NotificationCenter alerts={alerts} />}
         {activeTab === "services" && (
-          <div className="max-w-5xl mx-auto py-2">
-            <div className="rounded-[28px] bg-[#17362b] text-white p-6 sm:p-8 shadow-xl overflow-hidden relative">
-              <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-emerald-300/15 blur-2xl" />
-              <div className="relative z-10">
-                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300">Nikhil Paints Pro</p>
-                <h2 className="mt-2 text-2xl sm:text-3xl font-black tracking-tight">Professional painting, without the guesswork.</h2>
-                <p className="mt-2 max-w-xl text-sm text-white/65">
-                  Get expert help for shade matching, waterproofing and home painting requirements.
-                </p>
-              </div>
-            </div>
-          </div>
+          <PaintingServices isAdmin={isAdmin} />
         )}
       </main>
 
       <footer className="bg-[#10251d] text-white/60 pt-12 pb-36 px-4 sm:px-6 mt-auto border-t border-white/5">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
           <div className="space-y-4">
-            <h3 className="text-white text-xl font-black tracking-tight flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-emerald-400 flex items-center justify-center text-emerald-950 text-xs shadow-lg">NP</div>
-              Nikhil Paints
+            <h3 className="text-xl leading-none tracking-tighter">
+              <span className="font-black text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 to-emerald-200">Nikhil Paints</span><br/>
+              <span className="text-[13px] font-extrabold text-white/50 uppercase tracking-widest">& Hardware</span>
             </h3>
             <p className="text-xs leading-relaxed font-medium max-w-sm">
               Jamshedpur&apos;s premium destination for paints, waterproofing and hardware. Authorized dealers for Asian Paints, Berger and Birla Opus, with computerized tinting for 7,000+ shades.

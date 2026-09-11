@@ -33,17 +33,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: "services", label: "Painting Services", icon: ShieldCheck, type: "main" },
     { id: "history", label: "Past Orders", icon: RotateCcw, type: "main" },
     { id: "loyalty", label: `Rewards (${loyaltyCoins})`, icon: Award, type: "main" },
-    { id: "projects", label: "Projects", icon: FolderKanban, type: "main" },
   ];
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-100 h-screen sticky top-0 shrink-0 shadow-sm z-50">
-      <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-emerald-400 flex items-center justify-center text-emerald-950 font-black shadow-lg">NP</div>
-        <div>
-          <h2 className="font-black text-slate-800 text-lg leading-none tracking-tight">Nikhil Paints</h2>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Q-Commerce</span>
-        </div>
+      <div className="p-6 border-b border-slate-100 flex flex-col justify-center">
+        <h2 className="font-black text-transparent bg-clip-text bg-gradient-to-br from-emerald-700 to-emerald-500 text-2xl leading-none tracking-tighter">
+          Nikhil Paints<br/>
+          <span className="text-sm font-extrabold text-slate-400 uppercase tracking-widest">& Hardware</span>
+        </h2>
       </div>
 
       <div className="flex-1 overflow-y-auto py-5 px-3 space-y-1">
@@ -119,10 +117,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       <div className="p-4 border-t border-slate-100">
-        <div className="bg-emerald-50 rounded-2xl p-4 text-center border border-emerald-100">
-          <Building2 className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
-          <h3 className="text-xs font-black text-emerald-900 uppercase">Moon City Store</h3>
-          <p className="text-[10px] text-emerald-700 mt-1 font-medium">Open until 9 PM</p>
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50/50 rounded-2xl p-4 text-center border border-emerald-100/50 shadow-sm relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-16 h-16 bg-emerald-400/10 rounded-full blur-xl"></div>
+          <Building2 className="w-6 h-6 text-emerald-600 mx-auto mb-2 relative z-10" />
+          <h3 className="text-xs font-black text-slate-800 uppercase tracking-wide relative z-10">Moon City Store</h3>
+          <p className="text-[10px] text-slate-500 mt-1 font-semibold relative z-10">Dimna Mango Road</p>
+          <p className="text-[10px] text-emerald-600 mt-0.5 font-black relative z-10">Open until 9 PM</p>
         </div>
       </div>
     </aside>

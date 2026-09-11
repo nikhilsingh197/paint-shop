@@ -35,9 +35,11 @@ const ORDER_STATUSES = [
   { id: "tinted", label: "Paint Tinted", icon: Droplet, color: "text-purple-600", bg: "bg-purple-100" },
   { id: "packed", label: "Order Packed", icon: Box, color: "text-indigo-600", bg: "bg-indigo-100" },
   { id: "assigned", label: "Parcel Assigned", icon: UserCheck, color: "text-cyan-600", bg: "bg-cyan-100" },
-  { id: "out_for_delivery", label: "On The Way", icon: Truck, color: "text-blue-600", bg: "bg-blue-100" },
   { id: "delivered", label: "Delivered", icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-100" },
 ];
+
+import { PaintingLead } from "../types";
+import { fetchPaintingLeads, assignContractorToLead } from "../lib/paintingLeadsApi";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"orders" | "inventory" | "leads">("orders");
@@ -215,15 +217,18 @@ export default function AdminDashboard() {
   // =====================
   const fetchLeads = async () => {
     setLoadingLeads(true);
-    const { data, error } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
-    if (!error) setLeads(data || []);
+    const data = await fetchPaintingLeads();
+    setLeads(data);
     setLoadingLeads(false);
   };
 
-  const updateLeadStatus = async (id: string, currentStatus: string) => {
-    const nextStatus = currentStatus === 'New' ? 'Contacted' : currentStatus === 'Contacted' ? 'Converted' : 'New';
-    const { error } = await supabase.from("leads").update({ status: nextStatus }).eq("id", id);
-    if (!error) fetchLeads();
+  const handleAssignContractor = async (id: string, name: string, phone: string) => {
+    const success = await assignContractorToLead(id, `${name} - ${phone}`);
+    if (success) {
+      fetchLeads();
+    } else {
+      alert("Failed to assign contractor. Ensure Supabase table 'painting_leads' has 'assigned_contractor' and 'status' columns.");
+    }
   };
 
   return (
@@ -531,7 +536,7 @@ export default function AdminDashboard() {
             </h2>
           </div>
           {loadingLeads ? (
-            <div className="flex flex-col items-center justify-center py-20"><div className="w-12 h-12 border-4 border-slate-200 border-t-indigo-500 rounded-full animate-spin mb-4"></div><p className="text-slate-500 font-bold">Loading Leads...</p></div>
+            <div className="flex flex-col items-center justify-center py-20"><div className="w-12 h-12 border-4 border-slate-200 border-t-indigo-500 rounded-full animate-spin mb-4"></div><p className="text-slate-500 font-bold">Loading Quotes...</p></div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -539,38 +544,54 @@ export default function AdminDashboard() {
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
                     <th className="p-5 font-bold">Date</th>
                     <th className="p-5 font-bold">Customer Details</th>
-                    <th className="p-5 font-bold">Service Requested</th>
+                    <th className="p-5 font-bold">Assigned Painter</th>
                     <th className="p-5 font-bold text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
-                  {leads.length === 0 ? (
-                    <tr><td colSpan={4} className="p-10 text-center text-slate-500 font-bold">No leads found.</td></tr>
+                  {!leads || leads.length === 0 ? (
+                    <tr><td colSpan={4} className="p-10 text-center text-slate-500 font-bold">No customer quotes found.</td></tr>
                   ) : (
-                    leads.map((lead) => (
+                    leads.map((lead: PaintingLead) => (
                       <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
                         <td className="p-5 text-xs text-slate-500 font-medium">
-                          {new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {lead.preferred_date}
                         </td>
                         <td className="p-5">
-                          <div className="font-bold text-slate-900">{lead.name || "N/A"}</div>
-                          <div className="text-xs text-slate-500 mt-1">{lead.phone || "No Phone"}</div>
-                          {lead.area && <div className="text-[10px] text-slate-400 mt-0.5">{lead.area}</div>}
+                          <div className="font-bold text-slate-900">{lead.full_name}</div>
+                          <div className="text-xs font-bold text-indigo-600 mt-1 flex items-center gap-1"><Phone className="w-3 h-3" />{lead.phone}</div>
+                          <div className="text-xs text-slate-500 mt-1">{lead.address}</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5 line-clamp-2">{lead.service_type} - {lead.property_type}</div>
                         </td>
-                        <td className="p-5 font-bold text-slate-700">
-                          {lead.service || lead.service_type || "Painting"}
+                        <td className="p-5">
+                          {lead.assigned_contractor ? (
+                            <div className="text-sm">
+                              <div className="font-bold text-emerald-700">{lead.assigned_contractor.split("-")[0]}</div>
+                              <div className="text-xs text-slate-500">{lead.assigned_contractor.split("-")[1]}</div>
+                            </div>
+                          ) : (
+                            <form 
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                const form = e.target as HTMLFormElement;
+                                const name = (form.elements.namedItem('cName') as HTMLInputElement).value;
+                                const phone = (form.elements.namedItem('cPhone') as HTMLInputElement).value;
+                                handleAssignContractor(lead.id, name, phone);
+                              }}
+                              className="flex flex-col gap-2"
+                            >
+                              <input required name="cName" type="text" placeholder="Painter Name" className="p-2 border border-slate-200 rounded text-xs focus:outline-none focus:border-indigo-500" />
+                              <input required name="cPhone" type="text" placeholder="Painter Phone" className="p-2 border border-slate-200 rounded text-xs focus:outline-none focus:border-indigo-500" />
+                              <button type="submit" className="px-3 py-1.5 bg-indigo-600 text-white font-bold text-[10px] rounded hover:bg-indigo-700 transition">Assign</button>
+                            </form>
+                          )}
                         </td>
                         <td className="p-5 text-center">
-                          <button 
-                            onClick={() => updateLeadStatus(lead.id, lead.status || 'New')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer w-24 text-center ${
-                              (lead.status || 'New') === 'New' ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 
-                              (lead.status === 'Contacted') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 
-                              'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                            }`}
-                          >
-                            {lead.status || 'New'}
-                          </button>
+                          <span className={`px-3 py-1.5 rounded-lg text-xs font-bold w-24 inline-block text-center ${
+                            lead.assigned_contractor ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            {lead.assigned_contractor ? 'Assigned' : 'Pending'}
+                          </span>
                         </td>
                       </tr>
                     ))
