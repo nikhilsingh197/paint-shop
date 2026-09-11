@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { ProductItem, PackOption, CartItem, ShadeItem } from "../types";
-import { ShoppingBag, Palette, Plus, Minus } from "lucide-react";
+import { Palette, Plus, Minus, Zap } from "lucide-react";
 
 interface ProductCardProps {
   product: ProductItem;
   cartItems: CartItem[];
-  currentShade?: ShadeItem; // <-- Added to track the active global shade
-  onAddToCart: (product: ProductItem, pack: PackOption, shade?: ShadeItem) => void; // <-- Updated to accept shade
+  currentShade?: ShadeItem;
+  onAddToCart: (product: ProductItem, pack: PackOption, shade?: ShadeItem) => void;
   onUpdateQuantity: (cartItemId: string, newQty: number) => void;
   onOpenShadePicker: (product: ProductItem) => void;
 }
@@ -14,76 +14,73 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   cartItems,
-  currentShade, // <-- Extracted from props
+  currentShade,
   onAddToCart,
   onUpdateQuantity,
   onOpenShadePicker,
 }) => {
-  // Default to the first available pack size
-  const [selectedPack, setSelectedPack] = useState<PackOption>(
-    product.packs[0],
-  );
+  const [selectedPack, setSelectedPack] = useState<PackOption>(product.packs[0]);
 
-  // Check if this exact product & pack size & shade is already in the cart
+  // Unique ID for the cart based on product, size, and chosen shade
   const cartItemId = `${product.id}-${selectedPack.size}-${currentShade ? currentShade.code : "default"}`;
   const existingCartItem = cartItems.find((item) => item.id === cartItemId);
 
-  // Fallback Image Logic
-  const FALLBACK_IMAGE =
-    "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400&q=80";
-  const imageSrc =
-    product.image && product.image.startsWith("http")
-      ? product.image
-      : FALLBACK_IMAGE;
+  const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400&q=80";
+  const imageSrc = product.image && product.image.startsWith("http") ? product.image : FALLBACK_IMAGE;
+
+  // Determine if this is a tintable product
+  const isTintable = product.category.toLowerCase().includes("paint") ||
+                     product.category.toLowerCase().includes("enamel") ||
+                     product.category.toLowerCase().includes("emulsion");
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col">
-      {/* Product Image Section */}
-      <div className="relative h-48 bg-slate-50 overflow-hidden shrink-0">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col relative h-full">
+      
+      {/* Top Image Section - Q-Commerce Style (Compact) */}
+      <div className="relative h-[140px] bg-slate-50 flex items-center justify-center p-3 shrink-0">
         <img
           src={imageSrc}
-          alt={product.name || "Paint Product"}
-          onError={(e) => {
-            e.currentTarget.src = FALLBACK_IMAGE;
-            e.currentTarget.onerror = null;
-          }}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          alt={product.name}
+          onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
+          className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 hover:scale-105"
         />
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-          <span className="bg-white/90 backdrop-blur-sm text-slate-800 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md shadow-sm">
+        
+        {/* Brand & Delivery Promise Badges */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+          <span className="bg-slate-900/80 backdrop-blur-md text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow-sm">
             {product.brand}
+          </span>
+        </div>
+        <div className="absolute bottom-2 left-2">
+          <span className="bg-white/90 backdrop-blur-md border border-slate-100 text-slate-800 text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm flex items-center gap-0.5">
+            <Zap className="w-2.5 h-2.5 text-amber-500 fill-amber-500" /> 35 MINS
           </span>
         </div>
       </div>
 
-      {/* Product Details Section */}
-      <div className="p-5 flex flex-col flex-1">
-        <div className="flex-1">
-          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+      {/* Content Section */}
+      <div className="p-3 flex flex-col flex-1">
+        {/* Title & Category */}
+        <div className="mb-2 flex-1">
+          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-0.5 truncate">
             {product.category}
           </div>
-          <h3 className="font-extrabold text-slate-900 text-base leading-tight mb-1.5 line-clamp-2">
+          <h3 className="font-bold text-slate-800 text-xs leading-snug line-clamp-2">
             {product.name}
           </h3>
-          <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4">
-            {product.tagline}
-          </p>
         </div>
 
-        {/* Pack Size Selector */}
-        <div className="mb-4">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">
-            Select Size
-          </label>
-          <div className="flex flex-wrap gap-2">
+        {/* Compact Pack Size Selector */}
+        <div className="mb-3">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
             {product.packs.map((pack) => (
               <button
                 key={pack.size}
                 onClick={() => setSelectedPack(pack)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                className={`shrink-0 px-2 py-1 text-[10px] font-bold rounded border transition-colors ${
                   selectedPack.size === pack.size
-                    ? "bg-slate-900 border-slate-900 text-white shadow-md"
-                    : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                    ? "bg-slate-100 border-slate-300 text-slate-900"
+                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
                 }`}
               >
                 {pack.size}
@@ -92,71 +89,64 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         </div>
 
-        {/* Price & Action Buttons */}
-        <div className="pt-4 border-t border-slate-100 flex items-end justify-between gap-2 mt-auto">
-          <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-              Price
+        {/* Bottom Bar: Price, Shade Picker, and Q-Commerce Add Button */}
+        <div className="flex items-center justify-between gap-2 mt-auto pt-1">
+          
+          {/* Price & Shade Group */}
+          <div className="flex items-center gap-2 min-w-0">
+            <div>
+              <div className="text-xs font-black text-slate-900 leading-none">
+                ₹{selectedPack.price}
+              </div>
+              {selectedPack.originalPrice && selectedPack.originalPrice > selectedPack.price && (
+                <div className="text-[9px] text-slate-400 line-through mt-0.5">
+                  ₹{selectedPack.originalPrice}
+                </div>
+              )}
             </div>
-            <div className="text-xl font-black text-emerald-600 tracking-tight">
-              ₹{selectedPack.price}
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            {/* Pick Shade Button (Always available for paints) */}
-            {product.category.toLowerCase().includes("paint") ||
-            product.category.toLowerCase().includes("enamel") ||
-            product.category.toLowerCase().includes("emulsion") ? (
+            {/* Tint/Shade Picker Button - Highly visible next to price */}
+            {isTintable && (
               <button
                 onClick={() => onOpenShadePicker(product)}
-                className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 flex items-center justify-center transition-colors"
-                title="Choose Custom Shade"
+                className="w-7 h-7 shrink-0 rounded-full bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-100 transition-colors"
+                title="Choose Color Shade"
               >
-                <Palette className="w-5 h-5" />
+                <Palette className="w-3.5 h-3.5" />
               </button>
-            ) : null}
+            )}
+          </div>
 
-            {/* Add to Cart / Quantity Adjuster */}
+          {/* Add / Quantity Button - The Blinkit Signature Element */}
+          <div className="shrink-0">
             {existingCartItem ? (
-              <div className="flex items-center gap-3 bg-slate-900 text-white rounded-xl p-1 h-10">
+              <div className="flex items-center bg-emerald-600 text-white rounded-lg shadow-sm h-8 w-20">
                 <button
-                  onClick={() =>
-                    onUpdateQuantity(
-                      existingCartItem.id,
-                      existingCartItem.quantity - 1,
-                    )
-                  }
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 transition-colors"
+                  onClick={() => onUpdateQuantity(existingCartItem.id, existingCartItem.quantity - 1)}
+                  className="flex-1 h-full flex items-center justify-center hover:bg-white/20 rounded-l-lg transition-colors"
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-sm font-bold w-4 text-center">
+                <span className="w-6 text-center text-xs font-bold leading-none">
                   {existingCartItem.quantity}
                 </span>
                 <button
-                  onClick={() =>
-                    onUpdateQuantity(
-                      existingCartItem.id,
-                      existingCartItem.quantity + 1,
-                    )
-                  }
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 transition-colors"
+                  onClick={() => onUpdateQuantity(existingCartItem.id, existingCartItem.quantity + 1)}
+                  className="flex-1 h-full flex items-center justify-center hover:bg-white/20 rounded-r-lg transition-colors"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
               <button
-                // <-- Updated to pass the currentShade into the cart
                 onClick={() => onAddToCart(product, selectedPack, currentShade)}
-                className="h-10 px-4 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
+                className="h-8 w-20 bg-white border border-emerald-600 text-emerald-600 hover:bg-emerald-50 text-xs font-bold rounded-lg transition-colors uppercase tracking-wide active:scale-95 shadow-sm"
               >
-                <ShoppingBag className="w-4 h-4" />
-                <span className="hidden sm:inline">Add</span>
+                Add
               </button>
             )}
           </div>
+
         </div>
       </div>
     </div>
