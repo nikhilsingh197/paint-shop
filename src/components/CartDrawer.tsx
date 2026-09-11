@@ -32,6 +32,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [deliveryOtpDisplay, setDeliveryOtpDisplay] = useState<string | null>(null);
   const [useLoyaltyCoins, setUseLoyaltyCoins] = useState(true);
 
+  // --- Store Status State ---
+  const [isStoreOpen, setIsStoreOpen] = useState(true);
+
   // --- GPS States ---
   const [gettingLocation, setGettingLocation] = useState(false);
   const [locationSuccess, setLocationSuccess] = useState(false);
@@ -45,6 +48,24 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     fullName: "", phone: "", area: currentArea || "Mango",
     streetAddress: "", landmark: "", pincode: "831012", city: "Jamshedpur",
   });
+
+  // CHECK STORE STATUS WHEN CART OPENS
+ useEffect(() => {
+    if (isOpen) {
+      const fetchStatus = async () => {
+        const { data, error } = await supabase.from('store_settings').select('is_open').eq('id', 1).single();
+        
+        // --- PRINT THE SECRET ERROR TO THE CONSOLE ---
+        console.log("🚨 STORE STATUS CHECK -> Data:", data, "Error:", error);
+        
+        // Only update if we successfully got data, and explicitly set it to false if the DB says false
+        if (data !== null) {
+          setIsStoreOpen(data.is_open);
+        }
+      };
+      fetchStatus();
+    }
+  }, [isOpen]);
 
   // AUTO-FILL SAVED ADDRESS WHEN CART OPENS
   useEffect(() => {
@@ -373,15 +394,22 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
             {cartItems.length > 0 && (
               <div className="p-5 bg-white/90 backdrop-blur-md border-t border-slate-100 z-20">
-                <button onClick={handlePaymentBypass} className="w-full py-3.5 px-5 rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer">
-                  <div className="text-left">
-                    <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Complete Order</div>
-                    <div className="text-base font-black tracking-tight leading-none mt-0.5">₹{finalTotal.toFixed(2)}</div>
+                {isStoreOpen ? (
+                  <button onClick={handlePaymentBypass} className="w-full py-3.5 px-5 rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer">
+                    <div className="text-left">
+                      <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Complete Order</div>
+                      <div className="text-base font-black tracking-tight leading-none mt-0.5">₹{finalTotal.toFixed(2)}</div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-bold bg-white/10 px-4 py-2 rounded-xl">
+                      <span>Place Order</span><ArrowRight className="w-4 h-4" />
+                    </div>
+                  </button>
+                ) : (
+                  <div className="w-full py-3.5 px-5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-center shadow-sm">
+                    <div className="text-sm font-black tracking-tight mb-0.5">Store is Currently Closed</div>
+                    <div className="text-[11px] font-bold">Operating hours: 8:00 AM to 8:30 PM.</div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs font-bold bg-white/10 px-4 py-2 rounded-xl">
-                    <span>Place Order</span><ArrowRight className="w-4 h-4" />
-                  </div>
-                </button>
+                )}
               </div>
             )}
           </>

@@ -24,8 +24,9 @@ import {
   RefreshCw,
   AlertCircle,
   Shield,
-  Users, // <-- Added for Leads
-  ClipboardList // <-- Added for Leads
+  Users,
+  ClipboardList,
+  Store // <-- Added for the Open/Close switch
 } from "lucide-react";
 
 const ORDER_STATUSES = [
@@ -39,7 +40,10 @@ const ORDER_STATUSES = [
 ];
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"orders" | "inventory" | "leads">("orders"); // <-- Restored "leads"
+  const [activeTab, setActiveTab] = useState<"orders" | "inventory" | "leads">("orders");
+
+  // --- Store Status State ---
+  const [isStoreOpen, setIsStoreOpen] = useState(true);
 
   // --- Orders & Delivery Partners State ---
   const [orders, setOrders] = useState<any[]>([]);
@@ -60,15 +64,31 @@ export default function AdminDashboard() {
   const [loadingLeads, setLoadingLeads] = useState(true);
 
   useEffect(() => {
+    fetchStoreStatus();
+    
     if (activeTab === "orders") {
       fetchOrders();
       fetchDeliveryPartners(); 
     } else if (activeTab === "inventory") {
       fetchProducts();
     } else if (activeTab === "leads") {
-      fetchLeads(); // <-- Fetch leads when tab is active
+      fetchLeads();
     }
   }, [activeTab]);
+
+  // =====================
+  // STORE STATUS LOGIC
+  // =====================
+  const fetchStoreStatus = async () => {
+    const { data } = await supabase.from('store_settings').select('is_open').eq('id', 1).single();
+    if (data) setIsStoreOpen(data.is_open);
+  };
+
+  const toggleStoreStatus = async () => {
+    const newStatus = !isStoreOpen;
+    setIsStoreOpen(newStatus); // Update UI instantly
+    await supabase.from('store_settings').update({ is_open: newStatus }).eq('id', 1);
+  };
 
   // =====================
   // ORDER MANAGEMENT LOGIC
@@ -143,7 +163,7 @@ export default function AdminDashboard() {
   const handleCreateProduct = () => {
     setEditingProduct({
       id: `NK-PROD-${Date.now()}`, name: "", brand: "Asian Paints", category: "Interior Emulsion", tagline: "", finish: "Matt", image: "",
-      hsn_code: "3208", // <-- Default HSN code for paints
+      hsn_code: "3208", 
       requiresShade: true, is_active: true, rating: 4.5, reviewsCount: 0, deliveryMinutes: 35, coveragePerLiter: "100 sq.ft / 2 coats",
       washability: "Medium", features: JSON.stringify(["Computerized tinting available", "Fast delivery"]),
       packs: [{ size: "1 Litre", volumeLiters: 1, price: 500, originalPrice: 600, inStock: true }]
@@ -164,7 +184,7 @@ export default function AdminDashboard() {
     const { error } = await supabase.from("products").upsert({
       id: editingProduct.id, name: editingProduct.name, brand: editingProduct.brand, category: editingProduct.category, tagline: editingProduct.tagline || "",
       finish: editingProduct.finish || "Matt", image: editingProduct.image || "", requiresShade: editingProduct.requiresShade ?? true,
-      hsn_code: editingProduct.hsn_code || "3208", // <-- Saving HSN code
+      hsn_code: editingProduct.hsn_code || "3208",
       is_active: editingProduct.is_active ?? true, rating: editingProduct.rating || 4.5, reviewsCount: editingProduct.reviewsCount || 0,
       deliveryMinutes: editingProduct.deliveryMinutes || 35, coveragePerLiter: editingProduct.coveragePerLiter || "", washability: editingProduct.washability || "Medium",
       features: typeof editingProduct.features === 'string' ? editingProduct.features : JSON.stringify(editingProduct.features || []),
@@ -225,6 +245,20 @@ export default function AdminDashboard() {
               {activeTab === "leads" && "Manage service inquiries and waterproofing leads."}
             </p>
           </div>
+          
+          {/* --- STORE OPEN/CLOSED TOGGLE --- */}
+          <button 
+            onClick={toggleStoreStatus} 
+            className={`hidden sm:flex ml-4 px-4 py-2 rounded-xl text-sm font-black shadow-sm items-center gap-2 transition-all cursor-pointer border ${
+              isStoreOpen 
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' 
+                : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+            }`}
+          >
+            <Store className="w-4 h-4" />
+            {isStoreOpen ? 'STORE IS OPEN' : 'STORE IS CLOSED'}
+          </button>
+
         </div>
         <div className="flex flex-wrap bg-slate-100 p-1.5 rounded-xl shrink-0 gap-1">
           <button onClick={() => setActiveTab("orders")} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "orders" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Live Orders</button>
