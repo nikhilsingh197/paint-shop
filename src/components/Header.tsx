@@ -10,7 +10,7 @@ import {
   User
 } from "lucide-react";
 import { JAMSHEDPUR_AREAS } from "../data/paintDatabase";
-import { CartItem, LoyaltyProfile, AppNotification } from "../types";
+import { CartItem, AppNotification } from "../types";
 import { useAuth } from "../context/AuthContext";
 import AuthModal from "./AuthModal";
 import ProfileSettingsModal from "./ProfileSettingsModal";
@@ -24,7 +24,6 @@ interface HeaderProps {
   onTabChange: (tab: any) => void;
   cartItems: CartItem[];
   onOpenCart: () => void;
-  loyalty: LoyaltyProfile;
   notifications: AppNotification[];
   onOpenNotifications: () => void;
   onOpenConsultantChat: () => void;
@@ -39,7 +38,6 @@ export const Header: React.FC<HeaderProps> = ({
   onTabChange,
   cartItems,
   onOpenCart,
-  loyalty,
   notifications,
   onOpenNotifications,
   onOpenConsultantChat,

@@ -9,6 +9,7 @@ interface ProductCardProps {
   onAddToCart: (product: ProductItem, pack: PackOption, shade?: ShadeItem) => void;
   onUpdateQuantity: (cartItemId: string, newQty: number) => void;
   onOpenShadePicker: (product: ProductItem) => void;
+  onProductClick?: (product: ProductItem) => void;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -18,6 +19,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   onUpdateQuantity,
   onOpenShadePicker,
+  onProductClick
 }) => {
   const [selectedPack, setSelectedPack] = useState<PackOption>(product.packs[0]);
 
@@ -36,40 +38,57 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col relative h-full">
       
-      {/* Top Image Section - Q-Commerce Style (Compact) */}
-      <div className="relative h-[140px] bg-slate-50 flex items-center justify-center p-3 shrink-0">
-        <img
-          src={imageSrc}
-          alt={product.name}
-          onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
-          className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 hover:scale-105"
-        />
-        
-        {/* Brand & Delivery Promise Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1.5">
-          <span className="bg-slate-900/80 backdrop-blur-md text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow-sm">
-            {product.brand}
-          </span>
+      {/* Clickable Area for Product Details */}
+      <div 
+        className="cursor-pointer" 
+        onClick={() => onProductClick && onProductClick(product)}
+      >
+        {/* Top Image Section - Q-Commerce Style (Compact) */}
+        <div className="relative h-[140px] bg-slate-50 flex items-center justify-center p-3 shrink-0">
+          <img
+            src={imageSrc}
+            alt={product.name}
+            onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
+            className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 hover:scale-105"
+          />
+          
+          {/* Brand & Delivery Promise Badges */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+            <span className="bg-slate-900/80 backdrop-blur-md text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow-sm">
+              {product.brand}
+            </span>
+          </div>
+          
+          <div className="absolute top-2 right-2 flex flex-col gap-1.5 items-end">
+            {selectedPack.originalPrice > selectedPack.price && (
+              <span className="bg-rose-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-sm">
+                {Math.round(((selectedPack.originalPrice - selectedPack.price) / selectedPack.originalPrice) * 100)}% OFF
+              </span>
+            )}
+          </div>
+          
+          <div className="absolute bottom-2 left-2">
+            <span className="bg-white/90 backdrop-blur-md border border-slate-100 text-slate-800 text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm flex items-center gap-0.5">
+              <Zap className="w-2.5 h-2.5 text-amber-500 fill-amber-500" /> 35 MINS
+            </span>
+          </div>
         </div>
-        <div className="absolute bottom-2 left-2">
-          <span className="bg-white/90 backdrop-blur-md border border-slate-100 text-slate-800 text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm flex items-center gap-0.5">
-            <Zap className="w-2.5 h-2.5 text-amber-500 fill-amber-500" /> 35 MINS
-          </span>
+
+        {/* Content Section */}
+        <div className="p-3 pb-1 flex flex-col flex-1">
+          {/* Title & Category */}
+          <div className="mb-2 flex-1">
+            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-0.5 truncate">
+              {product.category}
+            </div>
+            <h3 className="font-bold text-slate-800 text-xs leading-snug line-clamp-2">
+              {product.name}
+            </h3>
+          </div>
         </div>
       </div>
 
-      {/* Content Section */}
-      <div className="p-3 flex flex-col flex-1">
-        {/* Title & Category */}
-        <div className="mb-2 flex-1">
-          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-0.5 truncate">
-            {product.category}
-          </div>
-          <h3 className="font-bold text-slate-800 text-xs leading-snug line-clamp-2">
-            {product.name}
-          </h3>
-        </div>
-
+      <div className="px-3 pb-3 flex flex-col">
         {/* Compact Pack Size Selector */}
         <div className="mb-3">
           <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>

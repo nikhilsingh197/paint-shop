@@ -22,7 +22,6 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     { id: "store", label: "Store", icon: PaintBucket },
     { id: "services", label: "Services", icon: ShieldCheck },
     { id: "history", label: "Orders", icon: RotateCcw },
-    { id: "loyalty", label: "Rewards", icon: Award },
   ];
 
   return (

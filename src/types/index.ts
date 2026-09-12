@@ -19,10 +19,11 @@ export interface ShadeItem {
   name: string;
   brand: 'Asian Paints' | 'Berger Paints' | 'Birla Opus' | 'RAL' | 'Universal';
   hex: string;
-  rgb: [number, number, number];
-  family: 'Whites & Off-Whites' | 'Warm Creams & Beiges' | 'Yellows & Golds' | 'Reds & Terracotta' | 'Blues & Teals' | 'Greens & Olives' | 'Purples & Violets' | 'Greys & Charcoals';
+  rgb?: [number, number, number];
+  family: string;
   fandeck?: string;
   popularity?: number; // 1-100
+  tinting_charge?: number;
   recommendedPairs?: string[]; // shade codes
   description?: string;
 }
@@ -153,15 +154,6 @@ export interface PaintingLead {
   created_at?: string;
 }
 
-export interface LoyaltyProfile {
-  tier: 'Silver Painter' | 'Gold Pro' | 'Platinum Master';
-  rangCoins: number; // 1 Coin = ₹0.50 discount
-  lifetimeCoinsEarned: number;
-  totalOrdersCount: number;
-  totalLitresPurchased: number;
-  nextTierProgress: number; // 0 to 100%
-  unlockedPerks: string[];
-}
 
 export interface AppNotification {
   id: string;

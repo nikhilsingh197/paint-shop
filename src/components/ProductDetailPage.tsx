@@ -17,6 +17,7 @@ interface ProductDetailPageProps {
   onAddToCart: (product: ProductItem, pack: PackOption, shade?: ShadeItem) => void;
   onOpenShadePicker: (product: ProductItem) => void;
   onBuyNow: (product: ProductItem, pack: PackOption, shade?: ShadeItem) => void;
+  currentShade?: ShadeItem;
 }
 
 export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
@@ -25,6 +26,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   onAddToCart,
   onOpenShadePicker,
   onBuyNow,
+  currentShade,
 }) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   
@@ -35,7 +37,12 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   }
   const [selectedPack, setSelectedPack] = useState<PackOption>(packsList?.[0] || { size: '1 Litre', volumeLiters: 1, price: 500, originalPrice: 600 });
   
-  const [selectedShade, setSelectedShade] = useState<ShadeItem | null>(null);
+  const [selectedShade, setSelectedShade] = useState<ShadeItem | null>(currentShade || null);
+
+  // Update selectedShade if currentShade prop changes
+  React.useEffect(() => {
+    setSelectedShade(currentShade || null);
+  }, [currentShade]);
 
   // Parse gallery images safely
   let imagesList = (product as any).galleryImages || (product as any).gallery_images;
@@ -46,8 +53,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     imagesList = [product.image || "https://placehold.co/600"];
   }
 
-  const currentPrice = selectedPack?.price || 500;
-  const currentMrp = selectedPack?.originalPrice || currentPrice + 100;
+  const baseTintCharge = selectedShade ? (selectedShade.tinting_charge || 0) : 0;
+  const tintingCost = baseTintCharge * (selectedPack?.volumeLiters || 1);
+  const currentPrice = (selectedPack?.price || 500) + tintingCost;
+  const currentMrp = (selectedPack?.originalPrice || currentPrice + 100) + tintingCost;
   const discountPercent = currentMrp > currentPrice 
     ? Math.round(((currentMrp - currentPrice) / currentMrp) * 100) 
     : 0;
@@ -134,17 +143,24 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <span className="text-xs font-bold text-slate-400">({product.reviewsCount || 128} verified reviews)</span>
             </div>
 
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-baseline gap-3">
-              <span className="text-3xl font-black text-slate-900">₹{currentPrice}</span>
-              {currentMrp > currentPrice && (
-                <>
-                  <span className="text-base font-bold text-slate-400 line-through">₹{currentMrp}</span>
-                  <span className="bg-emerald-100 text-emerald-800 font-black text-xs px-2 py-0.5 rounded-md">
-                    {discountPercent}% OFF
-                  </span>
-                </>
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex flex-col gap-2">
+              <div className="flex items-baseline gap-3">
+                <span className="text-3xl font-black text-slate-900">₹{currentPrice}</span>
+                {currentMrp > currentPrice && (
+                  <>
+                    <span className="text-base font-bold text-slate-400 line-through">₹{currentMrp}</span>
+                    <span className="bg-emerald-100 text-emerald-800 font-black text-xs px-2 py-0.5 rounded-md">
+                      {discountPercent}% OFF
+                    </span>
+                  </>
+                )}
+                <span className="ml-auto text-[10px] font-bold text-slate-400 uppercase">Inclusive of all taxes</span>
+              </div>
+              {tintingCost > 0 && (
+                <div className="text-[10px] font-bold text-indigo-600 bg-indigo-50/50 w-fit px-2 py-1 rounded-md border border-indigo-100/50">
+                  Includes ₹{tintingCost} tinting charge for {selectedPack?.size}
+                </div>
               )}
-              <span className="ml-auto text-[10px] font-bold text-slate-400 uppercase">Inclusive of all taxes</span>
             </div>
 
             {packsList && packsList.length > 0 && (

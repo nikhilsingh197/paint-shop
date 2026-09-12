@@ -155,23 +155,36 @@ console.log("ACTUAL DB DATA:", ordersData);
             const StatusIcon = statusConfig.icon;
             const isDelivered = order.status === "delivered";
 
+            const timelineSteps = [
+              { id: "paid", label: "Order Placed" },
+              { id: "getting_ready", label: "Preparing" },
+              { id: "tinted", label: "Tinting" },
+              { id: "packed", label: "Packed" },
+              { id: "out_for_delivery", label: "Out for Delivery" },
+              { id: "delivered", label: "Delivered" }
+            ];
+            
+            const currentStepIndex = timelineSteps.findIndex(s => s.id === order.status);
+            const activeIndex = currentStepIndex === -1 ? 0 : currentStepIndex;
+
             return (
-              <div key={order.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
+              <div key={order.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+                {/* Header */}
+                <div className="bg-slate-900 px-6 py-4 flex flex-wrap items-center justify-between gap-4 text-white">
                   <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Order ID</div>
-                    <div className="text-sm font-black text-slate-900">#{getSafeId(order)}</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Order ID</div>
+                    <div className="text-sm font-black tracking-widest text-emerald-400">#{getSafeId(order)}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date Placed</div>
-                    <div className="text-sm font-bold text-slate-700">{getSafeDate(order)}</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Date Placed</div>
+                    <div className="text-sm font-bold">{getSafeDate(order)}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Amount</div>
-                    <div className="text-sm font-black text-emerald-600">₹{order.total_amount || order.total}</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Total Amount</div>
+                    <div className="text-sm font-black text-white">₹{order.total_amount || order.total}</div>
                   </div>
                   <div className="flex flex-col items-end">
-                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border ${statusConfig.bg} ${statusConfig.color} ${statusConfig.border}`}>
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black shadow-inner bg-white/10 text-white border border-white/20`}>
                       <StatusIcon className="w-3.5 h-3.5" />
                       {statusConfig.label}
                     </div>
@@ -179,39 +192,72 @@ console.log("ACTUAL DB DATA:", ordersData);
                 </div>
 
                 <div className="p-6">
+                  {/* Timeline */}
+                  <div className="mb-8 overflow-x-auto pb-4 np-hide-scroll">
+                    <div className="flex items-center min-w-[500px]">
+                      {timelineSteps.map((step, index) => {
+                        const isCompleted = index < activeIndex;
+                        const isCurrent = index === activeIndex;
+                        return (
+                          <React.Fragment key={step.id}>
+                            <div className="flex flex-col items-center relative z-10 w-24">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-colors shadow-sm ${
+                                isCompleted ? 'bg-emerald-500 text-white' : 
+                                isCurrent ? 'bg-indigo-600 text-white ring-4 ring-indigo-100' : 
+                                'bg-slate-100 text-slate-400 border border-slate-200'
+                              }`}>
+                                {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : index + 1}
+                              </div>
+                              <span className={`text-[10px] font-black uppercase tracking-wider mt-2 text-center leading-tight ${
+                                isCompleted || isCurrent ? 'text-slate-900' : 'text-slate-400'
+                              }`}>
+                                {step.label}
+                              </span>
+                            </div>
+                            {index < timelineSteps.length - 1 && (
+                              <div className="flex-1 h-1.5 -ml-4 -mr-4 rounded-full relative z-0">
+                                <div className={`absolute inset-0 rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-slate-100'}`}></div>
+                              </div>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {order.profiles && (
-                    <div className="mb-6 flex items-center gap-3 bg-cyan-50/50 border border-cyan-100 p-3 rounded-xl w-fit">
-                      <div className="w-10 h-10 bg-cyan-100 text-cyan-600 rounded-full flex items-center justify-center shrink-0">
-                        <UserCheck className="w-5 h-5" />
+                    <div className="mb-6 flex items-center gap-3 bg-cyan-50/50 border border-cyan-100 p-4 rounded-2xl w-full">
+                      <div className="w-12 h-12 bg-cyan-100 text-cyan-600 rounded-full flex items-center justify-center shrink-0">
+                        <UserCheck className="w-6 h-6" />
                       </div>
-                      <div>
-                        <div className="text-[10px] font-bold text-cyan-600 uppercase tracking-wider">Delivery Agent</div>
+                      <div className="flex-1">
+                        <div className="text-[10px] font-bold text-cyan-600 uppercase tracking-wider mb-0.5">Delivery Agent</div>
                         <div className="text-sm font-black text-slate-800">{order.profiles.full_name || "Assigned Driver"}</div>
-                        <a href={`tel:${order.profiles.phone}`} className="text-xs font-bold text-cyan-700 hover:underline">
-                          {order.profiles.phone || "Contact via Support"}
-                        </a>
                       </div>
+                      <a href={`tel:${order.profiles.phone}`} className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-xs font-bold text-cyan-700 hover:bg-cyan-100 transition-colors shadow-sm border border-cyan-200">
+                        <PhoneCall className="w-3.5 h-3.5" /> Call Agent
+                      </a>
                     </div>
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
+                      <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
                         <Package className="w-4 h-4 text-indigo-500" /> Package Contents
                       </h4>
                       <div className="space-y-3">
                         {order.items?.map((item: any, idx: number) => (
-                          <div key={idx} className="flex gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                            <img src={item.image} alt={item.productName} className="w-12 h-12 rounded-lg object-cover bg-white border border-slate-200 shrink-0" />
+                          <div key={idx} className="flex gap-3 bg-white p-2.5 rounded-2xl border border-slate-100 shadow-sm">
+                            <img src={item.image} alt={item.productName} className="w-12 h-12 rounded-xl object-cover bg-slate-50 border border-slate-100 shrink-0" />
                             <div className="flex-1 min-w-0 flex flex-col justify-center">
-                              <div className="font-bold text-xs text-slate-900 truncate">{item.productName}</div>
-                              <div className="text-[10px] text-slate-500 mt-0.5">
+                              <div className="font-extrabold text-[11px] text-slate-900 leading-tight line-clamp-1">{item.productName}</div>
+                              <div className="text-[10px] font-bold text-slate-500 mt-0.5">
                                 {item.pack?.size} × {item.quantity}
                               </div>
                               {item.selectedShade && (
-                                <div className="mt-1 flex items-center gap-1.5 bg-white w-fit px-1.5 py-0.5 rounded border border-slate-200">
-                                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.selectedShade.hex }} />
-                                  <span className="text-[9px] font-black">{item.selectedShade.code}</span>
+                                <div className="mt-1.5 flex items-center gap-1.5 bg-slate-50 w-fit px-2 py-0.5 rounded-md border border-slate-200">
+                                  <div className="w-2.5 h-2.5 rounded-full shadow-inner" style={{ backgroundColor: item.selectedShade.hex }} />
+                                  <span className="text-[9px] font-black text-slate-700 tracking-wider">{item.selectedShade.code} - {item.selectedShade.name}</span>
                                 </div>
                               )}
                             </div>
@@ -220,93 +266,77 @@ console.log("ACTUAL DB DATA:", ordersData);
                       </div>
                     </div>
 
-                    <div>
-                      <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-rose-500" /> Delivered To
-                      </h4>
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm text-slate-600 leading-relaxed">
-                        <span className="font-bold text-slate-900">{order.delivery_address?.fullName || order.customer_name || "Customer"}</span><br />
-                        {order.delivery_address?.phone}<br />
-                        <span className="font-bold">{order.delivery_address?.area || order.area}</span>, {order.delivery_address?.streetAddress || ""}
-                        {order.delivery_address?.landmark && <span><br />Landmark: {order.delivery_address?.landmark}</span>}
+                    <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex flex-col justify-between">
+                      <div>
+                        <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-rose-500" /> Delivered To
+                        </h4>
+                        <div className="bg-white p-4 rounded-2xl border border-slate-100 text-xs font-medium text-slate-600 leading-relaxed shadow-sm">
+                          <span className="font-black text-sm text-slate-900 block mb-1">{order.delivery_address?.fullName || order.customer_name || "Customer"}</span>
+                          <span className="font-bold text-slate-500 block mb-2">{order.delivery_address?.phone}</span>
+                          <span className="font-bold text-slate-800">{order.delivery_address?.area || order.area}</span>, {order.delivery_address?.streetAddress || ""}
+                          {order.delivery_address?.landmark && <span className="block mt-1 pt-1 border-t border-slate-100 text-slate-500">Landmark: {order.delivery_address?.landmark}</span>}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-slate-200/50 grid grid-cols-2 gap-2">
+                         <button
+                           onClick={() => setViewingInvoice(order)}
+                           className="flex flex-col items-center justify-center gap-1.5 bg-white text-slate-700 py-3 rounded-xl text-[10px] font-black border border-slate-200 shadow-sm hover:bg-slate-100 transition-colors uppercase tracking-wider"
+                         >
+                           <FileText className="w-4 h-4 text-slate-400" />
+                           View Invoice
+                         </button>
+                         <a 
+                           href="tel:+917004734407" 
+                           className="flex flex-col items-center justify-center gap-1.5 bg-white text-slate-700 py-3 rounded-xl text-[10px] font-black border border-slate-200 shadow-sm hover:bg-slate-100 transition-colors uppercase tracking-wider"
+                         >
+                           <PhoneCall className="w-4 h-4 text-slate-400" />
+                           Store Support
+                         </a>
                       </div>
                     </div>
                   </div>
 
-                  {!isDelivered ? (
-                    <div className="mt-6 p-4 sm:p-5 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col lg:flex-row items-center justify-between gap-4">
+                  {!isDelivered && (
+                    <div className="mt-6 p-5 sm:p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
                       
                       {order.delivery_otp ? (
-                        <div className="flex items-center gap-4 w-full lg:w-auto">
-                          <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0">
+                        <div className="flex items-center gap-5 w-full md:w-auto">
+                          <div className="w-14 h-14 bg-white text-indigo-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-indigo-100">
                             <KeyRound className="w-6 h-6" />
                           </div>
                           <div>
-                            <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-0.5">
+                            <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">
                               Secure Delivery OTP
                             </div>
-                            <div className="text-2xl sm:text-3xl font-black text-indigo-700 tracking-[0.15em]">
+                            <div className="text-3xl font-black text-indigo-950 tracking-[0.2em] leading-none">
                               {order.delivery_otp}
                             </div>
-                            <div className="text-[10px] text-indigo-500 font-bold mt-1">
-                              Share this OTP with the delivery partner.
+                            <div className="text-[10px] font-bold text-indigo-500 mt-1.5 bg-white/60 inline-block px-2 py-0.5 rounded-full">
+                              Share with delivery partner
                             </div>
                           </div>
                         </div>
                       ) : (
-                        <div className="w-full lg:w-auto text-sm font-bold text-indigo-700">
-                          Preparing your order for dispatch.
+                        <div className="w-full md:w-auto text-sm font-bold text-indigo-700">
+                          Preparing your order for dispatch...
                         </div>
                       )}
                       
-                      <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto mt-4 lg:mt-0">
-                        <a 
-                          href="tel:+917004734407" 
-                          className="flex items-center justify-center gap-2 bg-white text-slate-700 px-5 py-3 rounded-xl text-xs font-bold border border-slate-200 shadow-sm hover:bg-slate-50 hover:text-emerald-600 transition-colors whitespace-nowrap cursor-pointer w-full sm:w-auto"
-                        >
-                          <PhoneCall className="w-4 h-4" />
-                          Call Support
-                        </a>
-
-                        <button
-                          onClick={() => setViewingInvoice(order)}
-                          className="flex items-center justify-center gap-2 bg-slate-800 text-white px-5 py-3 rounded-xl text-xs font-bold shadow-md hover:bg-slate-900 transition-colors whitespace-nowrap cursor-pointer w-full sm:w-auto"
-                        >
-                          <FileText className="w-4 h-4" />
-                          View Invoice
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            if (onTrackOrder) {
-                              onTrackOrder(order);
-                            } else {
-                              alert("Live tracking component is still loading...");
-                            }
-                          }}
-                          className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-3 rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-colors whitespace-nowrap cursor-pointer w-full sm:w-auto"
-                        >
-                          <Navigation className="w-4 h-4" />
-                          Live Tracking
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
                       <button
-                        onClick={() => setViewingInvoice(order)}
-                        className="flex items-center justify-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-slate-900 transition-colors whitespace-nowrap cursor-pointer"
+                        onClick={() => {
+                          if (onTrackOrder) {
+                            onTrackOrder(order);
+                          } else {
+                            alert("Live tracking component is still loading...");
+                          }
+                        }}
+                        className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-4 rounded-2xl text-xs font-black shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-xl transition-all cursor-pointer w-full md:w-auto hover:-translate-y-0.5"
                       >
-                        <FileText className="w-4 h-4" />
-                        View Invoice
+                        <Navigation className="w-4 h-4" />
+                        Live Map Tracking
                       </button>
-                      <a 
-                        href="tel:+917004734407" 
-                        className="flex items-center justify-center gap-2 bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 shadow-sm hover:bg-slate-100 transition-colors whitespace-nowrap cursor-pointer"
-                      >
-                        <PhoneCall className="w-4 h-4" />
-                        Contact Store Support
-                      </a>
                     </div>
                   )}
 

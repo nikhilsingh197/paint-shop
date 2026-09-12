@@ -8,7 +8,6 @@ import {
   ShadeItem,
   CartItem,
   OrderRecord,
-  LoyaltyProfile,
   PaintingProject,
   PushAlert,
   PaintBrand,
@@ -16,7 +15,6 @@ import {
 } from "./types";
 import {
   PRODUCTS_CATALOG,
-  DEFAULT_LOYALTY,
   INITIAL_ORDERS,
   INITIAL_PROJECTS,
   PUSH_ALERTS_INITIAL,
@@ -32,11 +30,11 @@ import { CartDrawer } from "./components/CartDrawer";
 import { PaymentModal } from "./components/PaymentModal";
 import { LiveOrderTracking } from "./components/LiveOrderTracking";
 import { PaintConsultantChat } from "./components/PaintConsultantChat";
-import { LoyaltyRewards } from "./components/LoyaltyRewards";
 import { OrderHistory } from "./components/OrderHistory";
 import { PaintingServices } from "./components/PaintingServices";
 import { NotificationCenter } from "./components/NotificationCenter";
-import DeliveryDashboard from "./components/DeliveryDashboard"; 
+import DeliveryDashboard from "./components/DeliveryDashboard";
+import { ProductDetailPage } from "./components/ProductDetailPage"; 
 import {
   Zap,
   Palette,
@@ -61,13 +59,14 @@ export default function App() {
     | "store"
     | "projects"
     | "history"
-    | "loyalty"
     | "chat"
     | "notifications"
     | "services"
     | "admin"
     | "delivery"
   >("store");
+
+  const [activeProduct, setActiveProduct] = useState<ProductItem | null>(null);
 
   const [selectedBrand, setSelectedBrand] = useState<PaintBrand | "All">("All");
   const [selectedCategory, setSelectedCategory] = useState<PaintCategory | "All">("All");
@@ -76,7 +75,6 @@ export default function App() {
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<OrderRecord[]>(INITIAL_ORDERS);
-  const [loyalty, setLoyalty] = useState<LoyaltyProfile>(DEFAULT_LOYALTY);
   const [projects, setProjects] = useState<PaintingProject[]>(INITIAL_PROJECTS);
   const [alerts, setAlerts] = useState<PushAlert[]>(PUSH_ALERTS_INITIAL);
 
@@ -90,6 +88,7 @@ export default function App() {
     isOpen: boolean;
     product?: ProductItem;
     currentShade?: ShadeItem;
+    isDirectAddToCart?: boolean;
   }>({
     isOpen: false,
   });
@@ -152,7 +151,8 @@ export default function App() {
 
   const handleAddToCart = (product: ProductItem, pack: PackOption, shade?: ShadeItem) => {
     const cartItemId = `${product.id}-${pack.size}-${shade ? shade.code : "default"}`;
-    const tintingCost = shade ? (shade as any).calculatedTintingCharge || 0 : 0;
+    const baseTintCharge = shade ? (shade.tinting_charge || 0) : 0;
+    const tintingCost = baseTintCharge * pack.volumeLiters;
 
     setCartItems((prev) => {
       const existing = prev.find((item) => item.id === cartItemId);
@@ -187,26 +187,31 @@ export default function App() {
 
   const handleClearCart = () => setCartItems([]);
 
-  const handleOpenShadePicker = (product?: ProductItem, currentShade?: ShadeItem) => {
+  const handleOpenShadePicker = (product?: ProductItem, currentShade?: ShadeItem, isDirectAddToCart?: boolean) => {
     setShadeModalConfig({
       isOpen: true,
       product: product, 
       currentShade: currentShade || globalSelectedShade || undefined,
+      isDirectAddToCart: isDirectAddToCart,
     });
   };
 
   const handleSelectShadeFromModal = (shade: ShadeItem) => {
-    if (shadeModalConfig.product) {
+    if (shadeModalConfig.product && shadeModalConfig.isDirectAddToCart) {
+      // Picked from Catalog ProductCard -> Add to cart immediately
       handleAddToCart(
         shadeModalConfig.product,
         shadeModalConfig.product.packs.find((p) => p.volumeLiters === (shade as any).selectedPackSize) || shadeModalConfig.product.packs[0],
         shade,
       );
     } else {
+      // Picked from ProductDetailPage OR Global Banner -> Set the shade
       setGlobalSelectedShade(shade);
-      setActiveTab("store");
-      if (shade.brand === "Asian Paints" || shade.brand === "Berger Paints" || shade.brand === "Birla Opus") {
-        setSelectedBrand(shade.brand as PaintBrand);
+      if (!activeProduct) {
+        setActiveTab("store");
+        if (shade.brand === "Asian Paints" || shade.brand === "Berger Paints" || shade.brand === "Birla Opus") {
+          setSelectedBrand(shade.brand as PaintBrand);
+        }
       }
     }
     setShadeModalConfig({ isOpen: false });
@@ -221,14 +226,6 @@ export default function App() {
     setOrders((prev) => [newOrder, ...prev]);
     setCartItems([]);
     setPaymentModalData({ isOpen: false });
-
-    const earnedCoins = Math.floor(newOrder.total / 10);
-    setLoyalty((prev) => ({
-      ...prev,
-      rangCoins: prev.rangCoins + earnedCoins - newOrder.loyaltyDiscount * 2,
-      lifetimeCoinsEarned: prev.lifetimeCoinsEarned + earnedCoins,
-    }));
-
     setTrackingOrder(newOrder);
   };
 
@@ -299,7 +296,6 @@ export default function App() {
         }}
         isAdmin={isAdmin}
         isDelivery={isDelivery}
-        loyaltyCoins={loyalty.rangCoins}
         onOpenConsultantChat={() => setIsChatOpen(true)}
       />
 
@@ -339,7 +335,6 @@ export default function App() {
           onSearchChange={setSearchQuery}
           cartItems={cartItems}
           onOpenCart={() => setIsCartOpen(true)}
-          loyalty={loyalty}
           notifications={alerts}
           onOpenNotifications={() => setActiveTab("notifications")}
           onOpenConsultantChat={() => setIsChatOpen(true)}
@@ -361,8 +356,22 @@ export default function App() {
 
         {activeTab === "store" && (
           <div className="space-y-5 sm:space-y-7">
-            {/* Premium Q-commerce hero */}
-            <section className="relative overflow-hidden rounded-[28px] bg-[#17362b] text-white shadow-[0_18px_60px_-24px_rgba(20,83,45,.45)]">
+            {activeProduct ? (
+              <ProductDetailPage 
+                product={activeProduct}
+                onBack={() => setActiveProduct(null)}
+                onAddToCart={handleAddToCart}
+                onOpenShadePicker={(prod) => handleOpenShadePicker(prod, globalSelectedShade || undefined)}
+                onBuyNow={(product, pack, shade) => {
+                  handleAddToCart(product, pack, shade);
+                  setIsCartOpen(true);
+                }}
+                currentShade={globalSelectedShade || undefined}
+              />
+            ) : (
+              <>
+                {/* Premium Q-commerce hero */}
+                <section className="relative overflow-hidden rounded-[28px] bg-[#17362b] text-white shadow-[0_18px_60px_-24px_rgba(20,83,45,.45)]">
               <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-emerald-400/20 blur-2xl" />
               <div className="absolute right-10 bottom-0 h-36 w-36 rounded-full bg-lime-300/10 blur-2xl" />
               <div className="absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-amber-300/10 blur-2xl" />
@@ -538,18 +547,20 @@ export default function App() {
                         cartItems={cartItems}
                         onAddToCart={handleAddToCart}
                         onUpdateQuantity={handleUpdateQuantity}
-                        onOpenShadePicker={(prod) => handleOpenShadePicker(prod, globalSelectedShade || undefined)}
+                        onOpenShadePicker={(prod) => handleOpenShadePicker(prod, globalSelectedShade || undefined, true)}
+                        onProductClick={setActiveProduct}
                       />
                     </div>
                   ))}
                 </div>
               )}
             </section>
+            </>
+            )}
           </div>
         )}
 
         {activeTab === "history" && <OrderHistory orders={orders} onReorder={handleReorder} onTrackOrder={setTrackingOrder} />}
-        {activeTab === "loyalty" && <LoyaltyRewards loyalty={loyalty} />}
         {activeTab === "notifications" && <NotificationCenter alerts={alerts} />}
         {activeTab === "services" && (
           <PaintingServices isAdmin={isAdmin} />
@@ -581,7 +592,6 @@ export default function App() {
             <ul className="space-y-3 text-xs font-medium">
               <li><button onClick={() => setActiveTab("store")} className="hover:text-emerald-300 transition cursor-pointer">Shop paints & hardware</button></li>
               <li><button onClick={() => setActiveTab("services")} className="hover:text-emerald-300 transition cursor-pointer">Hire professional painters</button></li>
-              <li><button onClick={() => setActiveTab("loyalty")} className="hover:text-emerald-300 transition cursor-pointer">Nikhil Rang Club rewards</button></li>
               <li><button onClick={() => setIsChatOpen(true)} className="hover:text-emerald-300 transition cursor-pointer">Free waterproofing consultation</button></li>
             </ul>
           </div>
@@ -660,6 +670,7 @@ export default function App() {
         onSelectShade={handleSelectShadeFromModal}
         product={shadeModalConfig.product}
         currentSelectedShade={shadeModalConfig.currentShade}
+        isDirectAddToCart={shadeModalConfig.isDirectAddToCart}
       />
 
       <CartDrawer
@@ -669,7 +680,6 @@ export default function App() {
         onUpdateQuantity={handleUpdateQuantity}
         onClearCart={handleClearCart}
         currentArea={currentArea}
-        loyalty={loyalty}
         onProceedToPayment={handleProceedToPayment}
         onNavigateToOrders={() => setActiveTab("history")}
       />

@@ -1,8 +1,19 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 
-// Find this interface at the top of AuthContext.tsx and update it:
+export interface SavedAddress {
+  id: string;
+  type: 'Home' | 'Work' | 'Other';
+  fullName: string;
+  phone: string;
+  streetAddress: string;
+  area: string;
+  landmark?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
 export interface UserProfile {
   id: string;
   full_name: string;
@@ -10,8 +21,9 @@ export interface UserProfile {
   street_address: string;
   area: string;
   landmark: string;
-  latitude?: number;  // <-- ADDED
-  longitude?: number; // <-- ADDED
+  latitude?: number;  
+  longitude?: number; 
+  saved_addresses?: SavedAddress[];
   rang_coins: number;
   lifetime_coins_earned: number;
   total_orders_count: number;
@@ -37,7 +49,7 @@ const AuthContext = createContext<AuthContextType>({
   updateProfile: async () => {},
 });
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);

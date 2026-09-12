@@ -3,8 +3,7 @@ import {
   ShadeItem,
   PaintingProject,
   OrderRecord,
-  LoyaltyProfile,
-  AppNotification,
+  AppNotification
 } from "../types";
 
 export const DEFAULT_SHADE: ShadeItem = {
@@ -1368,21 +1367,6 @@ export const INITIAL_PROJECTS: PaintingProject[] = [
   },
 ];
 
-export const INITIAL_LOYALTY: LoyaltyProfile = {
-  tier: "Gold Pro",
-  rangCoins: 480, // Worth ₹240 instant discount
-  lifetimeCoinsEarned: 1650,
-  totalOrdersCount: 7,
-  totalLitresPurchased: 48,
-  nextTierProgress: 68,
-  unlockedPerks: [
-    "⚡ Free Express 30-Min Delivery on all orders",
-    "🎨 100% Free Computerized Shade Tinting (Save ₹80 per can)",
-    "📞 Priority Color Consultant Helpline",
-    "🎁 10% Extra Bonus Rang Coins on Birla Opus & Berger purchases",
-  ],
-};
-
 export const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
     id: "notif-1",
@@ -1425,6 +1409,5 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
   },
 ];
 
-export const DEFAULT_LOYALTY = INITIAL_LOYALTY;
 export const INITIAL_ORDERS = INITIAL_ORDERS_HISTORY;
 export const PUSH_ALERTS_INITIAL = INITIAL_NOTIFICATIONS;

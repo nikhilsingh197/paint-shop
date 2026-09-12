@@ -20,8 +20,9 @@ interface ShadePickerModalProps {
   product?: ProductItem;
   currentShade?: ShadeItem;
   currentSelectedShade?: ShadeItem;
-  onSelectShade: (shade: any) => void;
+  onSelectShade: (shade: ShadeItem) => void;
   onClose: () => void;
+  isDirectAddToCart?: boolean;
 }
 
 const FAMILY_MAPPING: Record<string, string[]> = {
@@ -59,6 +60,7 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
   currentSelectedShade,
   onSelectShade,
   onClose,
+  isDirectAddToCart,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFamily, setActiveFamily] = useState("All");
@@ -215,28 +217,28 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
         </div>
 
         {/* Body */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+        <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 overflow-y-auto lg:overflow-hidden bg-slate-50">
           {/* Left Column: Search & Shade Swatches */}
-          <div className="lg:col-span-7 p-4 border-r border-slate-200 flex flex-col overflow-hidden">
-            <div className="space-y-2 mb-3">
+          <div className="lg:col-span-7 h-[50vh] lg:h-auto p-5 lg:pr-3 flex flex-col overflow-hidden shrink-0">
+            <div className="space-y-3 mb-4 bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Enter shade code (e.g. 0427, L152, 7230)..."
-                  className="w-full bg-slate-100 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
+                  placeholder="Search by shade code (e.g. L152, 7230) or name..."
+                  className="w-full bg-slate-50/50 border border-slate-200 rounded-xl pl-11 pr-4 py-2.5 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400"
                 />
               </div>
-              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
                 {COLOR_FAMILIES.map((family) => (
                   <button
                     key={family}
                     onClick={() => setActiveFamily(family)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                       activeFamily === family
-                        ? "bg-slate-900 text-white"
+                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
@@ -246,57 +248,77 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-1 pb-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="flex-1 overflow-y-auto pr-2 pb-4 np-hide-scroll">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 {filteredShades.map((shade) => {
                   const isSelected = selectedShade?.code === shade.code;
                   return (
                     <button
                       key={shade.code}
                       onClick={() => setSelectedShade(shade)}
-                      className={`p-2 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between group ${
+                      className={`p-2.5 rounded-2xl text-left border transition-all duration-200 cursor-pointer flex flex-col justify-between group ${
                         isSelected
-                          ? "border-slate-900 bg-amber-50/50 ring-2 ring-slate-900 shadow-sm"
-                          : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs"
+                          ? "border-indigo-600 bg-indigo-50/30 ring-1 ring-indigo-600 shadow-md transform scale-[0.98]"
+                          : "border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm hover:-translate-y-0.5"
                       }`}
                     >
-                      <div
-                        className="w-full h-14 rounded-lg border border-black/10 relative overflow-hidden shadow-inner flex items-center justify-center transition-transform group-hover:scale-98"
-                        style={{ backgroundColor: shade.hex }}
-                      >
-                        {isSelected && (
-                          <div className="w-6 h-6 rounded-full bg-white/90 shadow-md flex items-center justify-center text-slate-900">
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          </div>
-                        )}
-                        <span className="absolute bottom-1 right-1 text-[9px] font-black px-1 rounded-sm bg-black/40 text-white backdrop-blur-xs uppercase">
-                          {shade.brand.split(" ")[0]}
-                        </span>
-                      </div>
-                      <div className="mt-2">
-                        <div className="flex items-center justify-between">
-                          <span className="font-extrabold text-xs text-slate-900">
+                      <div className="flex gap-3 mb-2.5">
+                        <div
+                          className="w-10 h-10 rounded-xl border border-black/10 shadow-inner flex-shrink-0 relative overflow-hidden"
+                          style={{ backgroundColor: shade.hex }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-tr from-black/5 to-transparent mix-blend-overlay"></div>
+                          {isSelected && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                              <Check className="w-5 h-5 text-white drop-shadow-md" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1 pt-0.5">
+                          <h4 className="font-extrabold text-[11px] text-slate-900 leading-tight truncate">
+                            {shade.name}
+                          </h4>
+                          <span className="text-[10px] font-bold text-slate-400 font-mono mt-0.5 block">
                             {shade.code}
                           </span>
                         </div>
-                        <p className="text-[11px] font-medium text-slate-700 truncate">
-                          {shade.name}
-                        </p>
-                        <p className="text-[9px] text-slate-400 truncate">
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-[9px] font-bold text-indigo-600/70 uppercase tracking-wider bg-indigo-50 px-1.5 py-0.5 rounded">
                           {shade.family}
-                        </p>
+                        </span>
+                        {(shade as any).tinting_charge > 0 && (
+                          <span className="text-[10px] font-black text-amber-600">
+                            +₹{(shade as any).tinting_charge}/L
+                          </span>
+                        )}
                       </div>
                     </button>
                   );
                 })}
               </div>
 
-              {hasMore && filteredShades.length > 0 && !isLoading && (
-                <div className="flex justify-center mt-6 mb-2">
+              {isLoading && filteredShades.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4" />
+                  <p className="text-sm font-bold text-slate-600">Loading shades...</p>
+                </div>
+              )}
+              
+              {!isLoading && filteredShades.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-slate-200 border-dashed">
+                  <Palette className="w-12 h-12 text-slate-300 mb-4" />
+                  <p className="text-sm font-bold text-slate-600">No shades found.</p>
+                  <p className="text-xs text-slate-400 mt-1">Try a different search term or family.</p>
+                </div>
+              )}
+
+              {hasMore && filteredShades.length > 0 && (
+                <div className="mt-6 flex justify-center pb-4">
                   <button
                     onClick={handleLoadMore}
                     disabled={isLoadingMore}
-                    className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl flex items-center gap-2"
+                    className="px-6 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all flex items-center gap-2"
                   >
                     {isLoadingMore && (
                       <div className="w-3.5 h-3.5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
@@ -306,156 +328,145 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
                 </div>
               )}
             </div>
-
-            <form
-              onSubmit={handleApplyCustomCode}
-              className="pt-3 border-t border-slate-200 flex gap-2"
-            >
-              <input
-                type="text"
-                value={customCodeInput}
-                onChange={(e) => setCustomCodeInput(e.target.value)}
-                placeholder="Or enter contractor shade code directly..."
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-900"
-              />
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
-              >
-                Tint Code
-              </button>
-            </form>
           </div>
 
           {/* Right Column: Visualizer */}
-          <div className="lg:col-span-5 p-4 bg-slate-50/70 flex flex-col justify-between overflow-y-auto">
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
-                    <Eye className="w-4 h-4 text-indigo-600" />
-                    <span>Real-Time Room Wall Preview</span>
-                  </div>
-                </div>
-
-                <div className="relative w-full h-48 rounded-xl border border-slate-300 overflow-hidden shadow-inner flex flex-col justify-between p-3 transition-colors duration-300">
-                  <div
-                    className="absolute inset-0 transition-colors duration-300"
-                    style={{ backgroundColor: selectedShade.hex }}
-                  />
-                  <div className="relative z-10 flex items-start justify-between">
-                    <div className="bg-white/80 backdrop-blur-md px-2 py-1 rounded-md text-[10px] font-black text-slate-900 shadow-xs border border-white/40">
-                      {selectedShade.code} • {selectedShade.name}
+          <div className="lg:col-span-5 p-5 lg:pl-2 flex flex-col justify-between overflow-visible lg:overflow-y-auto shrink-0">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden h-auto lg:h-full">
+              {/* Preview Area */}
+              <div className="relative w-full h-64 shrink-0 bg-slate-100">
+                <div
+                  className="absolute inset-0 transition-colors duration-500 ease-in-out"
+                  style={{ backgroundColor: selectedShade.hex }}
+                />
+                {/* Wall texture overlay */}
+                <div className="absolute inset-0 opacity-40 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/wall-4-light.png')]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-black/30 mix-blend-overlay" />
+                
+                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+                  <div className="bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-lg border border-white/50">
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight">{selectedShade.name}</h2>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-sm font-bold text-slate-500 font-mono">{selectedShade.code}</span>
+                      <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">HEX {selectedShade.hex}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Selected Shade Details Card */}
-              <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-7 h-7 rounded-lg border border-black/10 shadow-xs"
-                      style={{ backgroundColor: selectedShade.hex }}
-                    />
+              {/* Action Area */}
+              <div className="p-6 flex-1 flex flex-col justify-between bg-white">
+                
+                {product && isDirectAddToCart ? (
+                  <div className="space-y-6">
                     <div>
-                      <h4 className="text-xs font-black text-slate-900">
-                        {selectedShade.code} — {selectedShade.name}
-                      </h4>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-sm">
-                    HEX {selectedShade.hex.toUpperCase()}
-                  </span>
-                </div>
-
-                {/* Conditional Rendering based on Workflow */}
-                {product ? (
-                  <>
-                    {/* WORKFLOW 1: PRODUCT FIRST - Show Pack Sizes */}
-                    <div className="pt-2 border-t border-slate-100">
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Select Pack Size:
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">Select Pack Size</h4>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="grid grid-cols-4 gap-2">
                         {([1, 4, 10, 20] as PackSize[]).map((size) => (
                           <button
                             key={size}
                             onClick={() => setPackSize(size)}
-                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors border cursor-pointer ${
+                            className={`py-3 rounded-xl text-sm font-black transition-all border-2 cursor-pointer ${
                               packSize === size
-                                ? "bg-amber-50 border-amber-300 text-amber-800 shadow-sm"
-                                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                ? "bg-indigo-50 border-indigo-600 text-indigo-700 shadow-sm"
+                                : "bg-white border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50"
                             }`}
                           >
-                            {size} Litre
+                            {size}L
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-slate-200 mt-4 flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-[10px] text-slate-500 font-bold uppercase">
-                          Tinting Charge ({packSize}L Pack):
-                        </div>
-                        <div className="text-sm font-black text-slate-900">
-                          {totalTintCharge > 0 ? (
-                            <>₹{totalTintCharge.toFixed(2)}</>
-                          ) : (
-                            <span className="text-emerald-700">
-                              FREE (No tinting)
-                            </span>
-                          )}
-                        </div>
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-slate-500">Tinting Charge ({packSize}L)</span>
+                        <span className="text-sm font-black text-slate-900">
+                          {totalTintCharge > 0 ? `₹${totalTintCharge.toFixed(2)}` : <span className="text-emerald-600">FREE</span>}
+                        </span>
                       </div>
-
-                      <button
-                        onClick={() => {
-                          onSelectShade({
-                            ...selectedShade,
-                            selectedPackSize: packSize,
-                            calculatedTintingCharge: totalTintCharge,
-                          });
-                          onClose();
-                        }}
-                        className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
-                      >
-                        <CheckCircle2 className="w-4 h-4 text-amber-400" />
-                        <span>Confirm & Add to Cart</span>
-                      </button>
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                        <span className="text-sm font-black text-slate-900">Product Total</span>
+                        <span className="text-lg font-black text-indigo-600">
+                          ₹{(((product.packs?.find(p => p.volumeLiters === packSize) || product.packs?.[0])?.price || 0) + totalTintCharge).toFixed(2)}
+                        </span>
+                      </div>
                     </div>
-                  </>
+
+                    <button
+                      onClick={() => {
+                        onSelectShade({
+                          ...selectedShade,
+                          selectedPackSize: packSize,
+                          calculatedTintingCharge: totalTintCharge,
+                        } as any);
+                        onClose();
+                      }}
+                      className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                    >
+                      <CheckCircle2 className="w-5 h-5 text-indigo-200" />
+                      <span>Confirm & Add to Cart</span>
+                    </button>
+                  </div>
+                ) : product && !isDirectAddToCart ? (
+                  <div className="flex flex-col justify-center py-8 space-y-6">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-100">
+                        <CheckCircle2 className="w-8 h-8 text-indigo-500" />
+                      </div>
+                      <h3 className="text-lg font-black text-slate-900 mb-2">Apply Shade to {product.name}</h3>
+                      <p className="text-sm text-slate-500 leading-relaxed max-w-[250px] mx-auto">
+                        Tinting charge will be added automatically based on your selected pack size.
+                      </p>
+                    </div>
+
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Base Tinting Rate</span>
+                      <span className="text-sm font-black text-slate-900">₹{baseTintCharge.toFixed(2)} / Litre</span>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        onSelectShade(selectedShade);
+                        onClose();
+                      }}
+                      className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                    >
+                      <CheckCircle2 className="w-5 h-5 text-indigo-200" />
+                      <span>Apply Shade to Product</span>
+                    </button>
+                  </div>
                 ) : (
-                  <>
-                    {/* WORKFLOW 2: COLOR FIRST - Browse Paints */}
-                    <div className="pt-3 border-t border-slate-200 mt-4 flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-[10px] text-slate-500 font-bold uppercase">
-                          Base Tinting Rate:
-                        </div>
-                        <div className="text-sm font-black text-slate-900">
-                          ₹{baseTintCharge.toFixed(2)}{" "}
-                          <span className="text-[10px] text-slate-500 font-normal">
-                            / Litre
-                          </span>
-                        </div>
+                  <div className="flex flex-col justify-center py-8 space-y-6">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-100">
+                        <Sparkles className="w-8 h-8 text-amber-500" />
                       </div>
-
-                      <button
-                        onClick={() => {
-                          onSelectShade(selectedShade);
-                          onClose();
-                        }}
-                        className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
-                      >
-                        <Search className="w-4 h-4" />
-                        <span>Find Paints for {selectedShade.code}</span>
-                      </button>
+                      <h3 className="text-lg font-black text-slate-900 mb-2">Find Paints for this Shade</h3>
+                      <p className="text-sm text-slate-500 leading-relaxed max-w-[250px] mx-auto">
+                        We can tint <strong className="text-slate-800">{selectedShade.name}</strong> into almost any of our interior or exterior paints.
+                      </p>
                     </div>
-                  </>
+
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Base Tinting Rate</span>
+                      <span className="text-sm font-black text-slate-900">₹{baseTintCharge.toFixed(2)} / Litre</span>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        onSelectShade(selectedShade);
+                        onClose();
+                      }}
+                      className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                    >
+                      <CheckCircle2 className="w-5 h-5 text-indigo-200" />
+                      <span>Apply Shade</span>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
