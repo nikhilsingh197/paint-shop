@@ -174,7 +174,7 @@ export const PaintingServices: React.FC<PaintingServicesProps> = ({
 
       {/* New Quote Modal (Customer) */}
       {showNewQuoteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/70 backdrop-blur-xs">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 bg-slate-950/70 backdrop-blur-xs">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 border border-slate-200 space-y-4">
             <h3 className="font-black text-lg text-slate-900 mb-2">Request Painting Quote</h3>
             <form onSubmit={handleRequestQuote} className="space-y-4 text-sm">

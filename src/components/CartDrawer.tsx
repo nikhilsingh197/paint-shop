@@ -205,7 +205,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-[100] flex justify-end">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={closeAndReset} />
       <div className="relative bg-white w-full max-w-[480px] h-screen shadow-2xl flex flex-col justify-between overflow-hidden sm:rounded-l-3xl animate-in slide-in-from-right duration-300" style={{ height: '100dvh' }}>
         
