@@ -3,7 +3,7 @@ import { CartItem, DeliveryAddress } from "../types";
 import { JAMSHEDPUR_AREAS } from "../data/paintDatabase";
 import {
   ShoppingBag, Trash2, Plus, Minus, MapPin, ArrowRight,
-  CheckCircle2, Package, X, CreditCard, Crosshair
+  CheckCircle2, Package, X, CreditCard, Crosshair, Truck
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
@@ -68,17 +68,23 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     }
   }, [isOpen]);
 
+  // SYNC AREA WITH GLOBAL HEADER
+  useEffect(() => {
+    if (isOpen) {
+      setAddress((prev) => ({ ...prev, area: currentArea }));
+    }
+  }, [isOpen, currentArea]);
+
   // AUTO-FILL SAVED ADDRESS WHEN CART OPENS
   useEffect(() => {
     if (isOpen && profile) {
       if (profile.saved_addresses && profile.saved_addresses.length > 0 && !selectedAddressId) {
         setSelectedAddressId(profile.saved_addresses[0].id);
-      } else {
+      } else if (!profile.saved_addresses || profile.saved_addresses.length === 0) {
         setAddress((prev) => ({
           ...prev,
           fullName: profile.full_name || prev.fullName,
           phone: profile.phone || prev.phone,
-          area: profile.area || currentArea || "Mango",
           streetAddress: profile.street_address || prev.streetAddress,
           landmark: profile.landmark || prev.landmark,
           latitude: profile.latitude || prev.latitude,
@@ -86,7 +92,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         }));
       }
     }
-  }, [isOpen, profile, currentArea]);
+  }, [isOpen, profile]);
 
   if (!isOpen) return null;
 
@@ -118,13 +124,43 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     }
   };
 
-  const finalTotal = cartItems.reduce((sum, item) => sum + (item.pack.price + item.tintingCharge) * item.quantity, 0);
+  const itemsTotal = cartItems.reduce((sum, item) => sum + (item.pack.price + item.tintingCharge) * item.quantity, 0);
   const totalMRP = cartItems.reduce((sum, item) => sum + (item.pack.originalPrice + item.tintingCharge) * item.quantity, 0);
-  const totalSavings = totalMRP - finalTotal;
-  const preGstTotal = finalTotal / 1.18;
-  const gstAmount = finalTotal - preGstTotal;
+  const totalSavings = totalMRP - itemsTotal;
   const paintSubtotal = cartItems.reduce((sum, item) => sum + item.pack.price * item.quantity, 0);
   const tintingTotal = cartItems.reduce((sum, item) => sum + (item.tintingCharge * item.quantity), 0);
+
+  // --- Dynamic Delivery & Zone Logic ---
+  const activeArea = (selectedAddressId && profile?.saved_addresses && !isAddingAddress)
+    ? (profile.saved_addresses.find((a: any) => a.id === selectedAddressId)?.area || address.area)
+    : address.area;
+
+  const getZoneConfig = (area: string) => {
+    const lowerArea = (area || "").toLowerCase();
+    if (['mango', 'dimna', 'pardih', 'baliguma'].some(a => lowerArea.includes(a))) return { fee: 39, threshold: 500 };
+    if (['sakchi', 'bhuiyadih', 'agrico', 'bhalubasa'].some(a => lowerArea.includes(a))) return { fee: 59, threshold: 1000 };
+    if (['bistupur', 'kadma', 'sonari', 'sidhgora'].some(a => lowerArea.includes(a))) return { fee: 89, threshold: 2500 };
+    return { fee: 149, threshold: 5000 };
+  };
+
+  const zoneConfig = getZoneConfig(activeArea);
+  const qualifiesForFreeDelivery = itemsTotal >= zoneConfig.threshold;
+  const deliveryFee = qualifiesForFreeDelivery ? 0 : zoneConfig.fee;
+
+  // --- Heavy Item Handling Surcharge ---
+  let handlingSurcharge = 0;
+  cartItems.forEach(item => {
+    if (item.pack.size.includes('10') || item.pack.size.includes('20') || item.pack.volumeLiters >= 10) {
+      handlingSurcharge += 40 * item.quantity;
+    }
+  });
+
+  const finalTotal = itemsTotal + deliveryFee + handlingSurcharge;
+  const preGstTotal = finalTotal / 1.18;
+  const gstAmount = finalTotal - preGstTotal;
+
+  const amountRemaining = Math.max(0, zoneConfig.threshold - itemsTotal);
+  const progressPercent = Math.min(100, (itemsTotal / zoneConfig.threshold) * 100);
 
   const triggerConfetti = () => {
     const duration = 3 * 1000;
@@ -393,6 +429,27 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
               ) : (
                 <>
+                  {/* --- NEW: Free Delivery Gamified Progress Bar --- */}
+                  <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <Truck className={`w-4 h-4 ${qualifiesForFreeDelivery ? 'text-emerald-500' : 'text-indigo-500'}`} />
+                        <span className="text-xs font-bold text-slate-800">
+                          {qualifiesForFreeDelivery 
+                            ? "🎉 You have unlocked FREE Delivery!" 
+                            : `Add ₹${amountRemaining.toFixed(0)} more to get FREE Delivery!`}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-500 ease-out ${qualifiesForFreeDelivery ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                  </div>
+                  {/* ----------------------------------------------- */}
+
                   <div className="space-y-4">
                     {cartItems.map((item) => (
                       <div key={item.id} className="group relative flex gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
@@ -480,6 +537,27 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     {tintingTotal > 0 && (
                       <div className="flex justify-between items-center text-amber-700">
                         <span>Tinting Charges</span><span className="font-bold">+ ₹{tintingTotal.toFixed(2)}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between items-center text-slate-700">
+                      <span>Delivery Fee</span>
+                      <span className="font-bold">
+                        {qualifiesForFreeDelivery ? (
+                          <>
+                            <span className="line-through text-slate-400 mr-2">₹{zoneConfig.fee}</span>
+                            <span className="text-emerald-600">FREE</span>
+                          </>
+                        ) : (
+                          `+ ₹${deliveryFee.toFixed(2)}`
+                        )}
+                      </span>
+                    </div>
+                    
+                    {handlingSurcharge > 0 && (
+                      <div className="flex justify-between items-center text-slate-700">
+                        <span>Heavy Item Handling</span>
+                        <span className="font-bold">+ ₹{handlingSurcharge.toFixed(2)}</span>
                       </div>
                     )}
                     

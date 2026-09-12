@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CartItem, DeliveryAddress, OrderRecord } from '../types';
 import confetti from 'canvas-confetti';
+import { getDeliveryTime } from '../utils/delivery';
 import { 
   ShieldCheck, 
   CreditCard, 
@@ -98,7 +99,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                        selectedMethod === 'netbanking' ? `NetBanking (${selectedBank.toUpperCase()})` : 'Cash on Delivery',
         paymentStatus: selectedMethod === 'cod' ? 'Cash On Delivery' : 'Paid',
         status: 'Order Placed',
-        estimatedDeliveryTime: '35 mins from now',
+        estimatedDeliveryTime: `${getDeliveryTime(orderData.address.area)} from now`,
         trackingStepIndex: 0,
         batchFormulaId: `NP-TINT-AUTO-${Math.floor(1000 + Math.random() * 9000)}-SAKCHI`,
         riderInfo: {

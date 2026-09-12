@@ -34,6 +34,7 @@ import { OrderHistory } from "./components/OrderHistory";
 import { PaintingServices } from "./components/PaintingServices";
 import { NotificationCenter } from "./components/NotificationCenter";
 import DeliveryDashboard from "./components/DeliveryDashboard";
+import { getDeliveryTime } from "./utils/delivery";
 import { ProductDetailPage } from "./components/ProductDetailPage"; 
 import {
   Zap,
@@ -308,7 +309,7 @@ export default function App() {
                 ⚡ Express
               </div>
               <p className="truncate text-[10px] sm:text-xs font-semibold text-emerald-50/95">
-                35-min delivery across Jamshedpur • 7,000+ shade codes
+                {getDeliveryTime(currentArea)} delivery across Jamshedpur • 7,000+ shade codes
               </p>
             </div>
             <button
@@ -359,6 +360,7 @@ export default function App() {
             {activeProduct ? (
               <ProductDetailPage 
                 product={activeProduct}
+                currentArea={currentArea}
                 onBack={() => setActiveProduct(null)}
                 onAddToCart={handleAddToCart}
                 onOpenShadePicker={(prod) => handleOpenShadePicker(prod, globalSelectedShade || undefined)}
@@ -439,7 +441,7 @@ export default function App() {
                             <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-400 to-lime-200" />
                           </div>
                           <div className="mt-3 text-[14px] font-black text-emerald-950">Premium Finish</div>
-                          <div className="text-[9px] font-semibold text-emerald-900/60">Delivered in under 35 mins</div>
+                          <div className="text-[9px] font-semibold text-emerald-900/60">Delivered in under {getDeliveryTime(currentArea)}</div>
                         </div>
                       </div>
                     </div>
@@ -473,7 +475,7 @@ export default function App() {
             {/* Quick utility rail */}
             <section className="grid grid-cols-4 gap-2 sm:gap-3">
               {[
-                { icon: Zap, label: "35 min", sub: "Express" },
+                { icon: Zap, label: getDeliveryTime(currentArea), sub: "Express" },
                 { icon: Palette, label: "7,000+", sub: "Shades" },
                 { icon: ShieldCheck, label: "100%", sub: "Genuine" },
                 { icon: PhoneCall, label: "Free", sub: "Consult" },
@@ -544,6 +546,7 @@ export default function App() {
                     <div key={product.id} className="transition duration-300 hover:-translate-y-1">
                       <ProductCard 
                         product={product} 
+                        currentArea={currentArea}
                         onAddToCart={handleAddToCart}
                         cartItems={cartItems}
                         onUpdateQuantity={handleUpdateQuantity}

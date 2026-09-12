@@ -10,9 +10,11 @@ import {
   Palette 
 } from "lucide-react";
 import { ProductItem, PackOption, ShadeItem } from "../types";
+import { getDeliveryTime } from "../utils/delivery";
 
 interface ProductDetailPageProps {
   product: ProductItem;
+  currentArea: string;
   onBack: () => void;
   onAddToCart: (product: ProductItem, pack: PackOption, shade?: ShadeItem) => void;
   onOpenShadePicker: (product: ProductItem) => void;
@@ -22,6 +24,7 @@ interface ProductDetailPageProps {
 
 export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   product,
+  currentArea,
   onBack,
   onAddToCart,
   onOpenShadePicker,
@@ -110,7 +113,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           <div className="grid grid-cols-3 gap-3 pt-2">
             <div className="bg-white border border-slate-200 p-3 rounded-2xl text-center shadow-xs">
               <Truck className="w-5 h-5 text-indigo-600 mx-auto mb-1" />
-              <div className="text-[10px] font-black text-slate-800">35-Min Express</div>
+              <div className="text-[10px] font-black text-slate-800 uppercase">{getDeliveryTime(currentArea)}</div>
               <div className="text-[9px] text-slate-400">Jamshedpur Hub</div>
             </div>
             <div className="bg-white border border-slate-200 p-3 rounded-2xl text-center shadow-xs">

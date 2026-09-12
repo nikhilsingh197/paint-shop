@@ -12,6 +12,7 @@ import {
 import { JAMSHEDPUR_AREAS } from "../data/paintDatabase";
 import { CartItem, AppNotification } from "../types";
 import { useAuth } from "../context/AuthContext";
+import { getDeliveryTime } from "../utils/delivery";
 import AuthModal from "./AuthModal";
 import ProfileSettingsModal from "./ProfileSettingsModal";
 
@@ -77,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
                   <Zap className="w-3 h-3 text-amber-600 fill-amber-600" />
                 </div>
-                <span>Delivery in 35 mins</span>
+                <span>Delivery in {getDeliveryTime(currentArea)}</span>
               </div>
               <div className="relative mt-0.5">
                 <button

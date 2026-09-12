@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ProductItem, PackOption, CartItem, ShadeItem } from "../types";
 import { Palette, Plus, Minus, Zap } from "lucide-react";
+import { getDeliveryTime } from "../utils/delivery";
 
 interface ProductCardProps {
   product: ProductItem;
@@ -10,6 +11,7 @@ interface ProductCardProps {
   onUpdateQuantity: (cartItemId: string, newQty: number) => void;
   onOpenShadePicker: (product: ProductItem) => void;
   onProductClick?: (product: ProductItem) => void;
+  currentArea: string;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -19,7 +21,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   onUpdateQuantity,
   onOpenShadePicker,
-  onProductClick
+  onProductClick,
+  currentArea
 }) => {
   const [selectedPack, setSelectedPack] = useState<PackOption>(product.packs[0]);
 
@@ -77,7 +80,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           
           <div className="absolute bottom-2 left-2">
             <span className="bg-white/90 backdrop-blur-md border border-slate-100 text-slate-800 text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm flex items-center gap-0.5">
-              <Zap className="w-2.5 h-2.5 text-amber-500 fill-amber-500" /> 35 MINS
+              <Zap className="w-2.5 h-2.5 text-amber-500 fill-amber-500" /> {getDeliveryTime(currentArea)}
             </span>
           </div>
         </div>
