@@ -207,7 +207,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={closeAndReset} />
-      <div className="relative bg-white w-full max-w-[480px] h-full shadow-2xl flex flex-col justify-between overflow-hidden sm:rounded-l-3xl animate-in slide-in-from-right duration-300">
+      <div className="relative bg-white w-full max-w-[480px] h-[100dvh] shadow-2xl flex flex-col justify-between overflow-hidden sm:rounded-l-3xl animate-in slide-in-from-right duration-300">
         
         {/* SUCCESS SCREEN */}
         {checkoutStep === "success" && (
@@ -355,7 +355,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               )}
             </div>
             
-            <div className="p-5 bg-white/90 backdrop-blur-md border-t border-slate-100 z-20">
+            <div className="p-5 pb-8 sm:pb-5 bg-white/90 backdrop-blur-md border-t border-slate-100 z-20">
               <button onClick={handlePaymentBypass} className="w-full py-3.5 px-5 rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer">
                 <div className="text-left">
                   <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Complete Order</div>
@@ -502,7 +502,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             </div>
 
             {cartItems.length > 0 && (
-              <div className="p-5 bg-white/90 backdrop-blur-md border-t border-slate-100 z-20">
+              <div className="p-5 pb-8 sm:pb-5 bg-white/90 backdrop-blur-md border-t border-slate-100 z-20">
                 {isStoreOpen ? (
                   <button onClick={() => setCheckoutStep("address")} className="w-full py-3.5 px-5 rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer">
                     <div className="text-left">
