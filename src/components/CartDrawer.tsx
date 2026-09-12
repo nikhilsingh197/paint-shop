@@ -355,16 +355,18 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               )}
             </div>
             
-            <div className="absolute bottom-0 left-0 right-0 p-5 pb-8 sm:pb-5 bg-white/95 backdrop-blur-md border-t border-slate-100 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
-              <button onClick={handlePaymentBypass} className="w-full py-3.5 px-5 rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer">
-                <div className="text-left">
-                  <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Complete Order</div>
-                  <div className="text-base font-black tracking-tight leading-none mt-0.5">₹{finalTotal.toFixed(2)}</div>
-                </div>
-                <div className="flex items-center gap-2 text-xs font-bold bg-white/10 px-4 py-2 rounded-xl">
-                  <span>Place Order</span><ArrowRight className="w-4 h-4" />
-                </div>
-              </button>
+            <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:w-[448px] z-[100] pointer-events-none animate-in slide-in-from-bottom-5">
+              <div className="bg-white/95 backdrop-blur-md p-4 rounded-[22px] shadow-[0_20px_55px_-20px_rgba(0,0,0,0.3)] border border-slate-200 pointer-events-auto">
+                <button onClick={handlePaymentBypass} className="w-full py-3.5 px-5 rounded-xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer active:scale-95">
+                  <div className="text-left">
+                    <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Complete Order</div>
+                    <div className="text-base font-black tracking-tight leading-none mt-0.5">₹{finalTotal.toFixed(2)}</div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs font-bold bg-white/10 px-4 py-2 rounded-xl">
+                    <span>Place Order</span><ArrowRight className="w-4 h-4" />
+                  </div>
+                </button>
+              </div>
             </div>
           </>
         )}
@@ -502,23 +504,25 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             </div>
 
             {cartItems.length > 0 && (
-              <div className="absolute bottom-0 left-0 right-0 p-5 pb-8 sm:pb-5 bg-white/95 backdrop-blur-md border-t border-slate-100 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
-                {isStoreOpen ? (
-                  <button onClick={() => setCheckoutStep("address")} className="w-full py-3.5 px-5 rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer">
-                    <div className="text-left">
-                      <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Total</div>
-                      <div className="text-base font-black tracking-tight leading-none mt-0.5">₹{finalTotal.toFixed(2)}</div>
+              <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:w-[448px] z-[100] pointer-events-none animate-in slide-in-from-bottom-5">
+                <div className="bg-white/95 backdrop-blur-md p-4 rounded-[22px] shadow-[0_20px_55px_-20px_rgba(0,0,0,0.3)] border border-slate-200 pointer-events-auto">
+                  {isStoreOpen ? (
+                    <button onClick={() => setCheckoutStep("address")} className="w-full py-3.5 px-5 rounded-xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer active:scale-95">
+                      <div className="text-left">
+                        <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Total</div>
+                        <div className="text-base font-black tracking-tight leading-none mt-0.5">₹{finalTotal.toFixed(2)}</div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs font-bold bg-white/10 px-4 py-2 rounded-xl">
+                        <span>Checkout</span><ArrowRight className="w-4 h-4" />
+                      </div>
+                    </button>
+                  ) : (
+                    <div className="w-full py-3.5 px-5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-center shadow-sm">
+                      <div className="text-sm font-black tracking-tight mb-0.5">Store is Currently Closed</div>
+                      <div className="text-[11px] font-bold">Operating hours: 8:00 AM to 8:30 PM.</div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs font-bold bg-white/10 px-4 py-2 rounded-xl">
-                      <span>Checkout</span><ArrowRight className="w-4 h-4" />
-                    </div>
-                  </button>
-                ) : (
-                  <div className="w-full py-3.5 px-5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-center shadow-sm">
-                    <div className="text-sm font-black tracking-tight mb-0.5">Store is Currently Closed</div>
-                    <div className="text-[11px] font-bold">Operating hours: 8:00 AM to 8:30 PM.</div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </>

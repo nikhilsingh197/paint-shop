@@ -219,7 +219,7 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
         {/* Body */}
         <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 overflow-hidden bg-slate-50">
           {/* Left Column: Search & Shade Swatches */}
-          <div className="flex-1 lg:col-span-7 p-3 sm:p-5 lg:pr-3 flex flex-col overflow-hidden shrink-0">
+          <div className="flex-1 lg:col-span-7 p-3 sm:p-5 lg:pr-3 flex flex-col overflow-hidden">
             <div className="space-y-3 mb-4 bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
@@ -248,7 +248,7 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-2 pb-4 np-hide-scroll">
+            <div className="flex-1 overflow-y-auto pr-2 pb-40 np-hide-scroll">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 {filteredShades.map((shade) => {
                   const isSelected = selectedShade?.code === shade.code;
@@ -356,124 +356,80 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
                 </div>
               </div>
 
-              {/* Action Area */}
-              <div className="p-6 flex-1 flex flex-col justify-between bg-white">
-                
-                {product && isDirectAddToCart ? (
-                  <div className="space-y-6">
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">Select Pack Size</h4>
-                      </div>
-                      <div className="grid grid-cols-4 gap-2">
-                        {([1, 4, 10, 20] as PackSize[]).map((size) => (
-                          <button
-                            key={size}
-                            onClick={() => setPackSize(size)}
-                            className={`py-3 rounded-xl text-sm font-black transition-all border-2 cursor-pointer ${
-                              packSize === size
-                                ? "bg-indigo-50 border-indigo-600 text-indigo-700 shadow-sm"
-                                : "bg-white border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50"
-                            }`}
-                          >
-                            {size}L
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-slate-500">Tinting Charge ({packSize}L)</span>
-                        <span className="text-sm font-black text-slate-900">
-                          {totalTintCharge > 0 ? `₹${totalTintCharge.toFixed(2)}` : <span className="text-emerald-600">FREE</span>}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
-                        <span className="text-sm font-black text-slate-900">Product Total</span>
-                        <span className="text-lg font-black text-indigo-600">
-                          ₹{(((product.packs?.find(p => p.volumeLiters === packSize) || product.packs?.[0])?.price || 0) + totalTintCharge).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        onSelectShade({
-                          ...selectedShade,
-                          selectedPackSize: packSize,
-                          calculatedTintingCharge: totalTintCharge,
-                        } as any);
-                        onClose();
-                      }}
-                      className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
-                    >
-                      <CheckCircle2 className="w-5 h-5 text-indigo-200" />
-                      <span>Confirm & Add to Cart</span>
-                    </button>
-                  </div>
-                ) : product && !isDirectAddToCart ? (
-                  <div className="flex flex-col justify-center py-8 space-y-6">
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-100">
-                        <CheckCircle2 className="w-8 h-8 text-indigo-500" />
-                      </div>
-                      <h3 className="text-lg font-black text-slate-900 mb-2">Apply Shade to {product.name}</h3>
-                      <p className="text-sm text-slate-500 leading-relaxed max-w-[250px] mx-auto">
-                        Tinting charge will be added automatically based on your selected pack size.
-                      </p>
-                    </div>
-
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Base Tinting Rate</span>
-                      <span className="text-sm font-black text-slate-900">₹{baseTintCharge.toFixed(2)} / Litre</span>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        onSelectShade(selectedShade);
-                        onClose();
-                      }}
-                      className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
-                    >
-                      <CheckCircle2 className="w-5 h-5 text-indigo-200" />
-                      <span>Apply Shade to Product</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col justify-center py-8 space-y-6">
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-100">
-                        <Sparkles className="w-8 h-8 text-amber-500" />
-                      </div>
-                      <h3 className="text-lg font-black text-slate-900 mb-2">Find Paints for this Shade</h3>
-                      <p className="text-sm text-slate-500 leading-relaxed max-w-[250px] mx-auto">
-                        We can tint <strong className="text-slate-800">{selectedShade.name}</strong> into almost any of our interior or exterior paints.
-                      </p>
-                    </div>
-
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Base Tinting Rate</span>
-                      <span className="text-sm font-black text-slate-900">₹{baseTintCharge.toFixed(2)} / Litre</span>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        onSelectShade(selectedShade);
-                        onClose();
-                      }}
-                      className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
-                    >
-                      <CheckCircle2 className="w-5 h-5 text-indigo-200" />
-                      <span>Apply Shade</span>
-                    </button>
-                  </div>
-                )}
               </div>
-            </div>
             </div>
           </div>
         </div>
+
+        {/* Floating Action Pop-up */}
+        <div className="fixed bottom-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[500px] z-[100] pointer-events-none animate-in slide-in-from-bottom-5">
+          <div className="bg-white/95 backdrop-blur-xl p-4 rounded-[22px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border border-slate-200 pointer-events-auto">
+            {product && isDirectAddToCart ? (
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Select Pack Size</h4>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {([1, 4, 10, 20] as PackSize[]).map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setPackSize(size)}
+                        className={`py-2 rounded-xl text-xs font-black transition-all border-2 cursor-pointer ${
+                          packSize === size
+                            ? "bg-indigo-50 border-indigo-600 text-indigo-700 shadow-sm"
+                            : "bg-white border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        {size}L
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-500">Tinting Charge ({packSize}L): <span className="text-slate-900">{totalTintCharge > 0 ? `₹${totalTintCharge.toFixed(2)}` : 'FREE'}</span></span>
+                    <span className="text-sm font-black text-slate-900 mt-0.5">Total: <span className="text-indigo-600">₹{(((product.packs?.find(p => p.volumeLiters === packSize) || product.packs?.[0])?.price || 0) + totalTintCharge).toFixed(2)}</span></span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      onSelectShade({
+                        ...selectedShade,
+                        selectedPackSize: packSize,
+                        calculatedTintingCharge: totalTintCharge,
+                      } as any);
+                      onClose();
+                    }}
+                    className="py-3 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-lg shadow-indigo-600/25 transition-all flex items-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-indigo-200" />
+                    <span>Add to Cart</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col min-w-0 pr-4">
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Selected Shade</h4>
+                  <div className="text-sm font-black text-slate-900 truncate">{selectedShade.name} <span className="text-slate-500 text-xs font-mono font-bold">({selectedShade.code})</span></div>
+                  <div className="text-[10px] font-bold text-slate-500 mt-0.5">Tinting Rate: ₹{baseTintCharge.toFixed(2)}/L</div>
+                </div>
+                <button
+                  onClick={() => {
+                    onSelectShade(selectedShade);
+                    onClose();
+                  }}
+                  className="py-3 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-lg shadow-indigo-600/25 transition-all flex items-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-indigo-200" />
+                  <span>{product ? 'Apply Shade' : 'Select'}</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );
