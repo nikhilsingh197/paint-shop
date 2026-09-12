@@ -207,7 +207,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={closeAndReset} />
-      <div className="relative bg-white w-full max-w-[480px] h-[100dvh] shadow-2xl flex flex-col justify-between overflow-hidden sm:rounded-l-3xl animate-in slide-in-from-right duration-300">
+      <div className="relative bg-white w-full max-w-[480px] h-screen shadow-2xl flex flex-col justify-between overflow-hidden sm:rounded-l-3xl animate-in slide-in-from-right duration-300" style={{ height: '100dvh' }}>
         
         {/* SUCCESS SCREEN */}
         {checkoutStep === "success" && (
@@ -258,7 +258,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
               <button onClick={closeAndReset} className="p-2 text-slate-400 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-50"><X className="w-5 h-5" /></button>
             </div>
-            <div className="flex-1 overflow-y-auto bg-slate-50/50 p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto bg-slate-50/50 p-6 pb-32 space-y-6">
               
               {!isAddingAddress && profile?.saved_addresses && profile.saved_addresses.length > 0 && (
                 <div className="space-y-4">
@@ -355,7 +355,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               )}
             </div>
             
-            <div className="p-5 pb-8 sm:pb-5 bg-white/90 backdrop-blur-md border-t border-slate-100 z-20">
+            <div className="absolute bottom-0 left-0 right-0 p-5 pb-8 sm:pb-5 bg-white/95 backdrop-blur-md border-t border-slate-100 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
               <button onClick={handlePaymentBypass} className="w-full py-3.5 px-5 rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer">
                 <div className="text-left">
                   <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Complete Order</div>
@@ -383,7 +383,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <button onClick={closeAndReset} className="p-2 text-slate-400 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-50"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-slate-50/50 p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto bg-slate-50/50 p-6 pb-32 space-y-6">
               {cartItems.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center pb-20">
                   <div className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center mb-6"><ShoppingBag className="w-10 h-10 text-slate-300" /></div>
@@ -502,7 +502,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             </div>
 
             {cartItems.length > 0 && (
-              <div className="p-5 pb-8 sm:pb-5 bg-white/90 backdrop-blur-md border-t border-slate-100 z-20">
+              <div className="absolute bottom-0 left-0 right-0 p-5 pb-8 sm:pb-5 bg-white/95 backdrop-blur-md border-t border-slate-100 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
                 {isStoreOpen ? (
                   <button onClick={() => setCheckoutStep("address")} className="w-full py-3.5 px-5 rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer">
                     <div className="text-left">

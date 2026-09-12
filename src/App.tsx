@@ -542,13 +542,14 @@ export default function App() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4">
                   {filteredProducts.map((product) => (
                     <div key={product.id} className="transition duration-300 hover:-translate-y-1">
-                      <ProductCard
-                        product={product}
-                        cartItems={cartItems}
+                      <ProductCard 
+                        product={product} 
                         onAddToCart={handleAddToCart}
+                        cartItems={cartItems}
                         onUpdateQuantity={handleUpdateQuantity}
                         onOpenShadePicker={(prod) => handleOpenShadePicker(prod, globalSelectedShade || undefined, true)}
                         onProductClick={setActiveProduct}
+                        currentShade={globalSelectedShade || undefined}
                       />
                     </div>
                   ))}
