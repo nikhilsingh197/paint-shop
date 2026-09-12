@@ -183,38 +183,14 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white w-full max-w-5xl max-h-[92vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
-        {/* Header */}
-        <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-rose-500 via-amber-500 to-indigo-600 flex items-center justify-center text-white">
-              <Palette className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-base text-slate-900 leading-tight">
-                  7,000+ Computerized Shade Selector
-                </h3>
-              </div>
-              <p className="text-xs text-slate-500">
-                {product ? (
-                  <>
-                    Selected for:{" "}
-                    <strong className="text-slate-800">{product.name}</strong>
-                  </>
-                ) : (
-                  "Select a color to find compatible paints."
-                )}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-slate-200 text-slate-500 font-bold text-sm"
-          >
-            ✕
-          </button>
-        </div>
+      <div className="relative bg-white w-full max-w-5xl max-h-[92vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+        {/* Floating Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 z-50 w-8 h-8 rounded-full bg-white/90 backdrop-blur shadow-md border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-white flex items-center justify-center transition-all cursor-pointer"
+        >
+          ✕
+        </button>
 
         {/* Body */}
         <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 overflow-hidden bg-slate-50">
