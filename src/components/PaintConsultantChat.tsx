@@ -211,6 +211,22 @@ export const PaintConsultantChat: React.FC<PaintConsultantChatProps> = ({
               </div>
             </div>
           ))}
+          {messages.length === 1 && (
+            <div className="flex flex-wrap gap-2 pt-4 px-2">
+              {SUGGESTION_CHIPS.map((chip, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setInputText(chip);
+                    handleSendMessage(chip);
+                  }}
+                  className="bg-white border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-full text-[10px] font-bold text-left transition-colors shadow-xs"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
 

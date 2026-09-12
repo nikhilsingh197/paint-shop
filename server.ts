@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import path from "path";
+import { GoogleGenAI } from "@google/genai";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -78,7 +79,55 @@ app.post("/api/verify-payment", (req, res) => {
 });
 
 // ---------------------------------------------------------
-// 2. PRODUCTION FRONTEND SERVING (For Render Deployment)
+// 2. AI CONSULTANT API ROUTE
+// ---------------------------------------------------------
+
+app.post("/api/consultant/chat", async (req, res) => {
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not set in environment variables");
+    }
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const { message, history } = req.body;
+    
+    const systemPrompt = `You are the Expert Paint & Color Technical Consultant at Nikhil Paints and Hardware Jamshedpur.
+You help customers with:
+1. Paint brand comparison (Asian Paints, Berger, Birla Opus).
+2. Shade suggestions (mention specific 4-digit shade codes like 7996, 0952, etc. if you suggest a color).
+3. Waterproofing solutions and Damp-proofing methods.
+4. Paint estimation and coverage logic.
+
+Keep responses concise, helpful, and highly professional. Format with Markdown.
+IMPORTANT: When suggesting a color, ALWAYS mention its exact 4-digit or alphanumeric code (e.g., L141, 8004, 0952, 7996) so the UI can detect it and show a color swatch!`;
+
+    const chatHistory = (history || []).map((msg: any) => ({
+      role: msg.sender === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.text }]
+    }));
+    
+    // Add the current message
+    chatHistory.push({
+      role: 'user',
+      parts: [{ text: message }]
+    });
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.6-flash',
+      contents: chatHistory,
+      config: {
+        systemInstruction: systemPrompt,
+      }
+    });
+
+    res.json({ reply: response.text });
+  } catch (error: any) {
+    console.error("Gemini AI Chat Error:", error);
+    res.status(500).json({ reply: "I apologize, but my AI system is currently unavailable. Please call us at +91 70047 34407 for immediate assistance." });
+  }
+});
+
+// ---------------------------------------------------------
+// 3. PRODUCTION FRONTEND SERVING (For Render Deployment)
 // ---------------------------------------------------------
 
 // Serve the static files from the React/Vite 'dist' directory
