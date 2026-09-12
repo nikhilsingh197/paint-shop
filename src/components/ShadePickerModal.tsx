@@ -217,9 +217,9 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
         </div>
 
         {/* Body */}
-        <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 overflow-y-auto lg:overflow-hidden bg-slate-50">
+        <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 overflow-hidden bg-slate-50">
           {/* Left Column: Search & Shade Swatches */}
-          <div className="lg:col-span-7 h-[50vh] lg:h-auto p-5 lg:pr-3 flex flex-col overflow-hidden shrink-0">
+          <div className="flex-1 lg:col-span-7 p-3 sm:p-5 lg:pr-3 flex flex-col overflow-hidden shrink-0">
             <div className="space-y-3 mb-4 bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
@@ -331,8 +331,9 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
           </div>
 
           {/* Right Column: Visualizer */}
-          <div className="lg:col-span-5 p-5 lg:pl-2 flex flex-col justify-between overflow-visible lg:overflow-y-auto shrink-0">
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden h-auto lg:h-full">
+          <div className="lg:col-span-5 flex flex-col shrink-0 border-t border-slate-200 lg:border-t-0 bg-white z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] lg:shadow-none overflow-y-auto max-h-[55vh] lg:max-h-full">
+            <div className="flex flex-col h-full lg:p-5 lg:pl-2">
+              <div className="bg-white lg:rounded-3xl lg:border border-slate-200 lg:shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden h-full">
               {/* Preview Area */}
               <div className="relative w-full h-64 shrink-0 bg-slate-100">
                 <div
@@ -469,6 +470,7 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
                   </div>
                 )}
               </div>
+            </div>
             </div>
           </div>
         </div>
