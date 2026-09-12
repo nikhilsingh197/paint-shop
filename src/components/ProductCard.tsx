@@ -58,8 +58,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {product.brand}
             </span>
           </div>
+
+          {product.in_stock === false && (
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center z-10">
+              <span className="bg-slate-900 text-white text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg rotate-[-10deg]">
+                Sold Out
+              </span>
+            </div>
+          )}
           
-          <div className="absolute top-2 right-2 flex flex-col gap-1.5 items-end">
+          <div className="absolute top-2 right-2 flex flex-col gap-1.5 items-end z-20">
             {selectedPack.originalPrice > selectedPack.price && (
               <span className="bg-rose-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-sm">
                 {Math.round(((selectedPack.originalPrice - selectedPack.price) / selectedPack.originalPrice) * 100)}% OFF
@@ -138,7 +146,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           {/* Add / Quantity Button - The Blinkit Signature Element */}
           <div className="shrink-0">
-            {existingCartItem ? (
+            {product.in_stock === false ? (
+              <div className="h-8 px-3 bg-slate-100 border border-slate-200 text-slate-400 text-[10px] font-bold rounded-lg flex items-center justify-center uppercase tracking-wide cursor-not-allowed">
+                Out of Stock
+              </div>
+            ) : existingCartItem ? (
               <div className="flex items-center bg-emerald-600 text-white rounded-lg shadow-sm h-8 w-20">
                 <button
                   onClick={() => onUpdateQuantity(existingCartItem.id, existingCartItem.quantity - 1)}

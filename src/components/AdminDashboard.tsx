@@ -187,7 +187,7 @@ export default function AdminDashboard() {
       id: editingProduct.id, name: editingProduct.name, brand: editingProduct.brand, category: editingProduct.category, tagline: editingProduct.tagline || "",
       finish: editingProduct.finish || "Matt", image: editingProduct.image || "", requiresShade: editingProduct.requiresShade ?? true,
       hsn_code: editingProduct.hsn_code || "3208",
-      is_active: editingProduct.is_active ?? true, rating: editingProduct.rating || 4.5, reviewsCount: editingProduct.reviewsCount || 0,
+      is_active: editingProduct.is_active ?? true, in_stock: editingProduct.in_stock ?? true, rating: editingProduct.rating || 4.5, reviewsCount: editingProduct.reviewsCount || 0,
       deliveryMinutes: editingProduct.deliveryMinutes || 35, coveragePerLiter: editingProduct.coveragePerLiter || "", washability: editingProduct.washability || "Medium",
       features: typeof editingProduct.features === 'string' ? editingProduct.features : JSON.stringify(editingProduct.features || []),
       packs: editingProduct.packs || []
@@ -198,6 +198,11 @@ export default function AdminDashboard() {
 
   const toggleProductStatus = async (id: string, currentStatus: boolean) => {
     const { error } = await supabase.from("products").update({ is_active: !currentStatus }).eq("id", id);
+    if (!error) fetchProducts();
+  };
+
+  const toggleInStockStatus = async (id: string, currentStatus: boolean) => {
+    const { error } = await supabase.from("products").update({ in_stock: !currentStatus }).eq("id", id);
     if (!error) fetchProducts();
   };
 
@@ -466,14 +471,15 @@ export default function AdminDashboard() {
                     <th className="p-4 font-bold">Category</th>
                     <th className="p-4 font-bold">Base Price</th>
                     <th className="p-4 font-bold text-center">Visibility</th>
+                    <th className="p-4 font-bold text-center">Stock</th>
                     <th className="p-4 font-bold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {loadingProducts ? (
-                    <tr><td colSpan={5} className="p-10 text-center text-slate-500 font-bold">Loading Inventory...</td></tr>
+                    <tr><td colSpan={6} className="p-10 text-center text-slate-500 font-bold">Loading Inventory...</td></tr>
                   ) : filteredInventory.length === 0 ? (
-                    <tr><td colSpan={5} className="p-10 text-center text-slate-500 font-bold">No products found.</td></tr>
+                    <tr><td colSpan={6} className="p-10 text-center text-slate-500 font-bold">No products found.</td></tr>
                   ) : (
                     filteredInventory.map(product => {
                       let packsList = [];
@@ -501,9 +507,17 @@ export default function AdminDashboard() {
                           <td className="p-4 text-center">
                             <button 
                               onClick={() => toggleProductStatus(product.id, product.is_active)}
-                              className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${product.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'}`}
+                              className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${product.is_active ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
                             >
-                              {product.is_active ? 'In Stock (Live)' : 'Hidden (Out of Stock)'}
+                              {product.is_active ? 'Live' : 'Hidden'}
+                            </button>
+                          </td>
+                          <td className="p-4 text-center">
+                            <button 
+                              onClick={() => toggleInStockStatus(product.id, product.in_stock ?? true)}
+                              className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${(product.in_stock ?? true) ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'}`}
+                            >
+                              {(product.in_stock ?? true) ? 'In Stock' : 'Out of Stock'}
                             </button>
                           </td>
                           <td className="p-4 text-right">
@@ -683,6 +697,10 @@ export default function AdminDashboard() {
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" checked={editingProduct.is_active} onChange={e => setEditingProduct({...editingProduct, is_active: e.target.checked})} className="w-4 h-4 text-emerald-600 rounded cursor-pointer" />
                       <span className="text-sm font-bold text-slate-700">Live on Store</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={editingProduct.in_stock ?? true} onChange={e => setEditingProduct({...editingProduct, in_stock: e.target.checked})} className="w-4 h-4 text-emerald-600 rounded cursor-pointer" />
+                      <span className="text-sm font-bold text-slate-700">In Stock</span>
                     </label>
                   </div>
                 </div>

@@ -55,6 +55,7 @@ export interface ProductItem {
   requiresShade: boolean;
   defaultShadeCode?: string;
   badge?: string; // e.g. "Bestseller", "New Launch", "Monsoon Pick"
+  in_stock?: boolean;
 }
 
 export interface CartItem {

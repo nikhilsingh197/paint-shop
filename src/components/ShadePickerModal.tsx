@@ -316,9 +316,7 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
                   className="absolute inset-0 transition-colors duration-500 ease-in-out"
                   style={{ backgroundColor: selectedShade.hex }}
                 />
-                {/* Wall texture overlay */}
-                <div className="absolute inset-0 opacity-40 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/wall-4-light.png')]" />
-                <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-black/30 mix-blend-overlay" />
+                {/* Clean solid color representation (No dusty textures) */}
                 
                 <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
                   <div className="bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-lg border border-white/50">

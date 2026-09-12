@@ -81,7 +81,14 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               alt={product.name}
               className="max-h-full max-w-full object-contain transition-all duration-300"
             />
-            <span className="absolute top-4 left-4 bg-slate-900/80 text-amber-300 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg backdrop-blur-xs">
+            {product.in_stock === false && (
+              <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center z-10">
+                <span className="bg-slate-900 text-white text-xl font-black uppercase tracking-widest px-6 py-3 rounded-xl shadow-2xl rotate-[-10deg]">
+                  Sold Out
+                </span>
+              </div>
+            )}
+            <span className="absolute top-4 left-4 bg-slate-900/80 text-amber-300 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg backdrop-blur-xs z-20">
               {product.brand}
             </span>
           </div>
@@ -218,20 +225,31 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-              <button 
-                onClick={() => selectedPack && onAddToCart(product, selectedPack, selectedShade || undefined)}
-                className="w-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-sm py-4 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <ShoppingCart className="w-4 h-4" /> Add to Cart
-              </button>
-              <button 
-                onClick={() => selectedPack && onBuyNow(product, selectedPack, selectedShade || undefined)}
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-sm py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Zap className="w-4 h-4 text-amber-400" /> Buy Now
-              </button>
-            </div>
+            {product.in_stock === false ? (
+              <div className="pt-4">
+                <button 
+                  disabled
+                  className="w-full bg-slate-200 text-slate-500 font-black text-sm py-4 rounded-2xl shadow-none cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  Sold Out
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
+                <button 
+                  onClick={() => selectedPack && onAddToCart(product, selectedPack, selectedShade || undefined)}
+                  className="w-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-sm py-4 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <ShoppingCart className="w-4 h-4" /> Add to Cart
+                </button>
+                <button 
+                  onClick={() => selectedPack && onBuyNow(product, selectedPack, selectedShade || undefined)}
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-sm py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Zap className="w-4 h-4 text-amber-400" /> Buy Now
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
