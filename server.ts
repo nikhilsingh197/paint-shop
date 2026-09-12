@@ -122,7 +122,7 @@ IMPORTANT: When suggesting a color, ALWAYS mention its exact 4-digit or alphanum
     res.json({ reply: response.text });
   } catch (error: any) {
     console.error("Gemini AI Chat Error:", error);
-    res.status(500).json({ reply: "I apologize, but my AI system is currently unavailable. Please call us at +91 70047 34407 for immediate assistance." });
+    res.status(500).json({ reply: `I apologize, but my AI system is currently unavailable. Developer Error: ${error.message}` });
   }
 });
 
