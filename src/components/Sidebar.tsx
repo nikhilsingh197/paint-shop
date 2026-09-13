@@ -33,7 +33,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: "store", label: "Paints & Tools", icon: PaintBucket, type: "main" },
     { id: "services", label: "Painting Services", icon: ShieldCheck, type: "main" },
     { id: "history", label: "Past Orders", icon: RotateCcw, type: "main" },
-    { id: "legal", label: "Privacy & Legal", icon: FileText, type: "main" },
   ];
 
   return (

@@ -602,7 +602,6 @@ export default function App() {
               <li><button onClick={() => setActiveTab("store")} className="hover:text-emerald-300 transition cursor-pointer">Shop paints & hardware</button></li>
               <li><button onClick={() => setActiveTab("services")} className="hover:text-emerald-300 transition cursor-pointer">Hire professional painters</button></li>
               <li><button onClick={() => setIsChatOpen(true)} className="hover:text-emerald-300 transition cursor-pointer">Free waterproofing consultation</button></li>
-              <li><button onClick={() => setActiveTab("legal")} className="hover:text-emerald-300 transition cursor-pointer">Privacy & Legal Policies</button></li>
             </ul>
           </div>
 
@@ -628,9 +627,9 @@ export default function App() {
         <div className="max-w-7xl mx-auto mt-10 pt-6 border-t border-white/10 text-[10px] flex flex-col md:flex-row justify-between items-center gap-4">
           <p>© {new Date().getFullYear()} Nikhil Paints & Hardware. All rights reserved.</p>
           <div className="flex flex-wrap justify-center gap-4 font-medium">
-            <span className="hover:text-white transition cursor-pointer">Privacy Policy</span>
-            <span className="hover:text-white transition cursor-pointer">Terms of Service</span>
-            <span className="hover:text-white transition cursor-pointer">Refund & Cancellation</span>
+            <button onClick={() => setActiveTab("legal")} className="hover:text-white transition cursor-pointer outline-none">Privacy Policy</button>
+            <button onClick={() => setActiveTab("legal")} className="hover:text-white transition cursor-pointer outline-none">Terms of Service</button>
+            <button onClick={() => setActiveTab("legal")} className="hover:text-white transition cursor-pointer outline-none">Refund & Cancellation</button>
           </div>
         </div>
       </footer>
