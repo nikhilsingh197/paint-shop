@@ -36,6 +36,7 @@ import { NotificationCenter } from "./components/NotificationCenter";
 import DeliveryDashboard from "./components/DeliveryDashboard";
 import { getDeliveryTime } from "./utils/delivery";
 import { ProductDetailPage } from "./components/ProductDetailPage"; 
+import { LegalPolicies } from "./components/LegalPolicies"; 
 import {
   Zap,
   Palette,
@@ -65,6 +66,7 @@ export default function App() {
     | "services"
     | "admin"
     | "delivery"
+    | "legal"
   >("store");
 
   const [activeProduct, setActiveProduct] = useState<ProductItem | null>(null);
@@ -569,6 +571,9 @@ export default function App() {
         {activeTab === "services" && (
           <PaintingServices isAdmin={isAdmin} />
         )}
+        {activeTab === "legal" && (
+          <LegalPolicies onBack={() => setActiveTab("store")} />
+        )}
       </main>
 
       <footer className="bg-[#10251d] text-white/60 pt-12 pb-36 px-4 sm:px-6 mt-auto border-t border-white/5">
@@ -597,6 +602,7 @@ export default function App() {
               <li><button onClick={() => setActiveTab("store")} className="hover:text-emerald-300 transition cursor-pointer">Shop paints & hardware</button></li>
               <li><button onClick={() => setActiveTab("services")} className="hover:text-emerald-300 transition cursor-pointer">Hire professional painters</button></li>
               <li><button onClick={() => setIsChatOpen(true)} className="hover:text-emerald-300 transition cursor-pointer">Free waterproofing consultation</button></li>
+              <li><button onClick={() => setActiveTab("legal")} className="hover:text-emerald-300 transition cursor-pointer">Privacy & Legal Policies</button></li>
             </ul>
           </div>
 

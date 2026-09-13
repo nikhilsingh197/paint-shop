@@ -9,7 +9,7 @@ import {
 
 interface MobileBottomNavProps {
   activeTab: string;
-  onTabChange: (tab: "store" | "projects" | "history" | "loyalty" | "chat" | "services" | "admin" | "delivery") => void;
+  onTabChange: (tab: "store" | "projects" | "history" | "loyalty" | "chat" | "services" | "admin" | "delivery" | "legal") => void;
   onOpenConsultantChat: () => void;
 }
 

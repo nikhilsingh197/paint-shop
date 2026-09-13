@@ -83,7 +83,11 @@ export const PaintConsultantChat: React.FC<PaintConsultantChatProps> = ({
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/consultant/chat", {
+      const apiUrl = import.meta.env.DEV 
+        ? "/api/consultant/chat" 
+        : "https://paint-shop-t66j.onrender.com/api/consultant/chat";
+        
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
