@@ -590,7 +590,7 @@ export default function App() {
               <a href="tel:+917004734407" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-emerald-400 hover:text-emerald-950 flex items-center justify-center transition cursor-pointer">
                 <PhoneCall className="w-4 h-4" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-emerald-400 hover:text-emerald-950 flex items-center justify-center transition cursor-pointer">
+              <a href="https://www.google.com/maps/dir//Nikhil+Paints+and+Hardware+%F0%9F%8E%A8%7CAsian,+Berger+%26+Birla+Opus,+Moon+City,+road,+near+Jaipur+marble,+Dimna,+Mango,+Jamshedpur,+Jharkhand+831012/@22.8494213,86.2257152,15z/data=!4m8!4m7!1m0!1m5!1m1!1s0x39f5e3360f63afdb:0xab7d36b53ed0e59c!2m2!1d86.2232024!2d22.8258335?entry=ttu&g_ep=EgoyMDI2MDkwOS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-emerald-400 hover:text-emerald-950 flex items-center justify-center transition cursor-pointer">
                 <MapPin className="w-4 h-4" />
               </a>
             </div>

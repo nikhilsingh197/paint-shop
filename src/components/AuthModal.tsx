@@ -13,13 +13,20 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
     setLoading(true);
     setError(null);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const isNative = (window as any).Capacitor?.isNative;
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: isNative ? "com.nikhilpaints.app://login-callback" : window.location.origin,
+          skipBrowserRedirect: isNative,
         },
       });
       if (error) throw error;
+      
+      if (isNative && data?.url) {
+        const { Browser } = await import('@capacitor/browser');
+        await Browser.open({ url: data.url });
+      }
     } catch (err: any) {
       setError(err.message);
       setLoading(false);

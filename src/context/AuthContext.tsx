@@ -92,7 +92,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Handle deep links for Native OAuth (Capacitor)
+    let appListener: any;
+    if (typeof window !== 'undefined' && (window as any).Capacitor) {
+      import('@capacitor/app').then(({ App: CapacitorApp }) => {
+        appListener = CapacitorApp.addListener('appUrlOpen', async (event) => {
+          if (event.url.includes('#access_token=') || event.url.includes('?code=')) {
+            await supabase.auth.getSessionFromUrl({ url: event.url });
+          }
+        });
+      });
+    }
+
+    return () => {
+      subscription.unsubscribe();
+      if (appListener) appListener.then((l: any) => l.remove());
+    };
   }, []);
 
   // Finish loading only when user and profile are synced
