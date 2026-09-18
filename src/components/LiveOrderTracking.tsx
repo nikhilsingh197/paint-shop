@@ -62,15 +62,6 @@ const TRACKING_STEPS = [
     border: "border-cyan-500",
   },
   {
-    id: "out_for_delivery",
-    label: "Out for Delivery",
-    desc: "En route to your location in Jamshedpur!",
-    icon: Truck,
-    color: "text-blue-500",
-    bg: "bg-blue-100",
-    border: "border-blue-500",
-  },
-  {
     id: "delivered",
     label: "Delivered",
     desc: "Enjoy your fresh paints!",

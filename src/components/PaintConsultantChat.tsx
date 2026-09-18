@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChatMessage, ShadeItem } from "../types";
 import { supabase } from "../supabaseClient";
-import { Sparkles, Send, PhoneCall, Palette, Bot, User } from "lucide-react";
+import { Sparkles, Send, PhoneCall, Palette, Bot, User, X } from "lucide-react";
 
 interface PaintConsultantChatProps {
   isOpen: boolean;
   onClose: () => void;
   onPickShadeFromChat?: (shade: ShadeItem) => void;
+  imageContext?: string | null;
+  onClearImageContext?: () => void;
 }
 
 const transformShade = (dbShade: any): ShadeItem =>
@@ -30,6 +32,8 @@ export const PaintConsultantChat: React.FC<PaintConsultantChatProps> = ({
   isOpen,
   onClose,
   onPickShadeFromChat,
+  imageContext,
+  onClearImageContext
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
@@ -66,12 +70,12 @@ export const PaintConsultantChat: React.FC<PaintConsultantChatProps> = ({
 
   const handleSendMessage = async (textToSend?: string) => {
     const query = textToSend || inputText;
-    if (!query.trim() || isLoading) return;
+    if ((!query.trim() && !imageContext) || isLoading) return;
 
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}`,
       sender: "user",
-      text: query.trim(),
+      text: query.trim() || "What colors do you recommend for this photo?",
       timestamp: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -93,8 +97,13 @@ export const PaintConsultantChat: React.FC<PaintConsultantChatProps> = ({
         body: JSON.stringify({
           message: userMsg.text,
           history: messages.slice(-5),
+          image: imageContext || undefined,
         }),
       });
+
+      if (imageContext && onClearImageContext) {
+        onClearImageContext();
+      }
 
       const data = await response.json();
       const replyText = data.reply || "Thank you for consulting Nikhil Paints.";
@@ -234,6 +243,21 @@ export const PaintConsultantChat: React.FC<PaintConsultantChatProps> = ({
           <div ref={messagesEndRef} />
         </div>
 
+        {imageContext && (
+          <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 flex items-start gap-3 relative">
+            <img src={imageContext} alt="Context" className="h-16 w-16 object-cover rounded-lg border border-slate-200 shadow-sm" />
+            <div className="text-xs text-slate-500 flex-1 pt-1">
+              <strong>Photo attached.</strong> Ask the AI to suggest matching shades or styles for this room!
+            </div>
+            <button 
+              onClick={onClearImageContext}
+              className="p-1 rounded-full bg-white border border-slate-200 hover:bg-slate-100 text-slate-400"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -250,7 +274,7 @@ export const PaintConsultantChat: React.FC<PaintConsultantChatProps> = ({
           />
           <button
             type="submit"
-            disabled={!inputText.trim() || isLoading}
+            disabled={(!inputText.trim() && !imageContext) || isLoading}
             className="p-2.5 rounded-xl bg-slate-900 hover:bg-black text-white disabled:opacity-50"
           >
             <Send className="w-4 h-4" />

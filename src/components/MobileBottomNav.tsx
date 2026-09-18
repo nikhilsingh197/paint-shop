@@ -4,7 +4,8 @@ import {
   ShieldCheck,
   Award,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  Camera
 } from "lucide-react";
 
 interface MobileBottomNavProps {

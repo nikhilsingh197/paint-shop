@@ -160,7 +160,7 @@ console.log("ACTUAL DB DATA:", ordersData);
               { id: "getting_ready", label: "Preparing" },
               { id: "tinted", label: "Tinting" },
               { id: "packed", label: "Packed" },
-              { id: "out_for_delivery", label: "Out for Delivery" },
+              { id: "assigned", label: "Rider Assigned" },
               { id: "delivered", label: "Delivered" }
             ];
             

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "849667202345",
+    "project_id": "nikhil-paints-6450f",
+    "storage_bucket": "nikhil-paints-6450f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:849667202345:android:25ce9419d5051dc2e9ab38",
+        "android_client_info": {
+          "package_name": "com.nikhilpaints.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAf8RWWnpZh3Upi8bpAjQW6ztY8dZOEC_k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

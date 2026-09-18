@@ -9,7 +9,8 @@ import {
   Truck,
   Building2,
   FolderKanban,
-  FileText
+  FileText,
+  Camera
 } from "lucide-react";
 
 interface SidebarProps {

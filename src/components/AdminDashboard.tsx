@@ -42,7 +42,13 @@ import { PaintingLead } from "../types";
 import { fetchPaintingLeads, assignContractorToLead } from "../lib/paintingLeadsApi";
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"orders" | "inventory" | "leads">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "inventory" | "leads" | "notifications">("orders");
+
+  // --- Notification Form State ---
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifMessage, setNotifMessage] = useState("");
+  const [notifType, setNotifType] = useState("offer");
+  const [sendingNotif, setSendingNotif] = useState(false);
 
   // --- Store Status State ---
   const [isStoreOpen, setIsStoreOpen] = useState(true);
@@ -162,6 +168,28 @@ export default function AdminDashboard() {
     setLoadingProducts(false);
   };
 
+  const handleSendNotification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!notifTitle.trim() || !notifMessage.trim()) return;
+    setSendingNotif(true);
+    try {
+      const { error } = await supabase.from('app_notifications').insert([{
+        title: notifTitle,
+        message: notifMessage,
+        type: notifType
+      }]);
+      if (error) throw error;
+      alert("Notification broadcasted to all users!");
+      setNotifTitle("");
+      setNotifMessage("");
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      alert("Error sending notification. Make sure the app_notifications table is created.");
+    } finally {
+      setSendingNotif(false);
+    }
+  };
+
   const handleCreateProduct = () => {
     setEditingProduct({
       id: `NK-PROD-${Date.now()}`, name: "", brand: "Asian Paints", category: "Interior Emulsion", tagline: "", finish: "Matt", image: "",
@@ -246,35 +274,37 @@ export default function AdminDashboard() {
             {activeTab === "orders" && <Package className="w-7 h-7" />}
             {activeTab === "inventory" && <Tags className="w-7 h-7" />}
             {activeTab === "leads" && <Users className="w-7 h-7" />}
+            {activeTab === "notifications" && <AlertCircle className="w-7 h-7" />}
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Store Owner Panel</h1>
-            <p className="text-slate-500 font-medium mt-1 text-xs sm:text-sm">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight capitalize">{activeTab}</h1>
+            <p className="text-slate-500 text-sm mt-0.5">
               {activeTab === "orders" && "Manage pipeline and fulfill customer deliveries."}
               {activeTab === "inventory" && "Manage paint database, pricing, and stock."}
               {activeTab === "leads" && "Manage service inquiries and waterproofing leads."}
+              {activeTab === "notifications" && "Broadcast push notifications to all users."}
             </p>
           </div>
-          
-          {/* --- STORE OPEN/CLOSED TOGGLE --- */}
-          <button 
-            onClick={toggleStoreStatus} 
-            className={`hidden sm:flex ml-4 px-4 py-2 rounded-xl text-sm font-black shadow-sm items-center gap-2 transition-all cursor-pointer border ${
-              isStoreOpen 
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' 
-                : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
-            }`}
-          >
-            <Store className="w-4 h-4" />
-            {isStoreOpen ? 'STORE IS OPEN' : 'STORE IS CLOSED'}
-          </button>
+        </div>
 
-        </div>
-        <div className="flex flex-wrap bg-slate-100 p-1.5 rounded-xl shrink-0 gap-1">
-          <button onClick={() => setActiveTab("orders")} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "orders" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Live Orders</button>
-          <button onClick={() => setActiveTab("inventory")} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "inventory" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Inventory</button>
-          <button onClick={() => setActiveTab("leads")} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "leads" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Service Leads</button>
-        </div>
+        <label className="flex items-center gap-3 cursor-pointer bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
+          <Store className={`w-5 h-5 ${isStoreOpen ? 'text-emerald-500' : 'text-rose-500'}`} />
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-slate-900 leading-tight">Store Status</span>
+            <span className="text-xs text-slate-500 leading-tight">{isStoreOpen ? 'Accepting Orders' : 'Store Closed'}</span>
+          </div>
+          <div className={`relative inline-flex h-6 w-11 items-center rounded-full ml-4 transition-colors ${isStoreOpen ? 'bg-emerald-500' : 'bg-slate-300'}`}>
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isStoreOpen ? 'translate-x-6' : 'translate-x-1'}`} />
+            <input type="checkbox" className="sr-only" checked={isStoreOpen} onChange={toggleStoreStatus} />
+          </div>
+        </label>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mb-6 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+        <button onClick={() => setActiveTab("orders")} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "orders" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Live Orders</button>
+        <button onClick={() => setActiveTab("inventory")} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "inventory" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Inventory</button>
+        <button onClick={() => setActiveTab("leads")} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "leads" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Service Leads</button>
+        <button onClick={() => setActiveTab("notifications")} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "notifications" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>Notifications</button>
       </div>
 
       {/* ======================= */}
@@ -760,6 +790,78 @@ export default function AdminDashboard() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ======================= */}
+      {/* TAB 4: NOTIFICATIONS UI */}
+      {/* ======================= */}
+      {activeTab === "notifications" && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-6 border-b border-slate-200 bg-slate-50">
+            <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-indigo-500" />
+              Broadcast Notification
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">Send a push notification to all users' in-app notification centers.</p>
+          </div>
+          
+          <form onSubmit={handleSendNotification} className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-900 mb-1">Notification Title</label>
+              <input
+                type="text"
+                required
+                value={notifTitle}
+                onChange={(e) => setNotifTitle(e.target.value)}
+                placeholder="e.g. Flash Sale! 50% Off Asian Paints"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-bold text-slate-900 mb-1">Message</label>
+              <textarea
+                required
+                value={notifMessage}
+                onChange={(e) => setNotifMessage(e.target.value)}
+                placeholder="Write your message here..."
+                rows={3}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-900 mb-1">Notification Type</label>
+              <select
+                value={notifType}
+                onChange={(e) => setNotifType(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              >
+                <option value="offer">Offer / Discount</option>
+                <option value="monsoon">Weather / Monsoon Alert</option>
+                <option value="tip">Painting Tip</option>
+                <option value="flash_deal">Flash Deal</option>
+              </select>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex justify-end">
+              <button
+                type="submit"
+                disabled={sendingNotif}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                {sendingNotif ? (
+                  <>Sending...</>
+                ) : (
+                  <>
+                    <AlertCircle className="w-5 h-5" />
+                    Broadcast Now
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

@@ -97,8 +97,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window !== 'undefined' && (window as any).Capacitor) {
       import('@capacitor/app').then(({ App: CapacitorApp }) => {
         appListener = CapacitorApp.addListener('appUrlOpen', async (event) => {
-          if (event.url.includes('#access_token=') || event.url.includes('?code=')) {
-            await supabase.auth.getSessionFromUrl({ url: event.url });
+          if (event.url.includes('#access_token=')) {
+            // Supabase client automatically picks up URL hash fragments in standard setup,
+            // but for Capacitor, you may need to manually parse and set session if it doesn't.
+            const url = new URL(event.url.replace('#', '?')); // hack to parse hash as search params
+            const access_token = url.searchParams.get('access_token');
+            const refresh_token = url.searchParams.get('refresh_token');
+            if (access_token && refresh_token) {
+              await supabase.auth.setSession({ access_token, refresh_token });
+            }
           }
         });
       });

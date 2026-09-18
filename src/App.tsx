@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { supabase } from "./supabaseClient";
 import { fetchProducts } from "./lib/productApi";
 import AdminDashboard from "./components/AdminDashboard";
 import { useAuth } from "./context/AuthContext";
@@ -79,7 +80,55 @@ export default function App() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<OrderRecord[]>(INITIAL_ORDERS);
   const [projects, setProjects] = useState<PaintingProject[]>(INITIAL_PROJECTS);
-  const [alerts, setAlerts] = useState<PushAlert[]>(PUSH_ALERTS_INITIAL);
+  const [alerts, setAlerts] = useState<PushAlert[]>([]);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      const { data, error } = await supabase
+        .from('app_notifications')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (data && !error) {
+        // Map DB rows to PushAlert format
+        const mappedAlerts: PushAlert[] = data.map((n: any) => ({
+          id: n.id,
+          title: n.title,
+          message: n.message,
+          timestamp: new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: n.type || 'offer',
+          read: false,
+        }));
+        setAlerts(mappedAlerts);
+      }
+    };
+    
+    fetchNotifications();
+
+    // Subscribe to real-time new notifications
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'app_notifications' },
+        (payload) => {
+          const newAlert: PushAlert = {
+            id: payload.new.id,
+            title: payload.new.title,
+            message: payload.new.message,
+            timestamp: new Date(payload.new.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: payload.new.type || 'offer',
+            read: false,
+          };
+          setAlerts(prev => [newAlert, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -708,7 +757,7 @@ export default function App() {
           onReorder={handleReorder}
         />
       )}
-
+      
       <PaintConsultantChat
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
