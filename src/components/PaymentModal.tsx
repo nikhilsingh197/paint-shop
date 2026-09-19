@@ -64,7 +64,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     });
   };
 
-  const finalizeOrder = (paymentMethodName: string, paymentStatusName: string) => {
+  const finalizeOrder = (paymentMethodName: string, paymentStatusName: 'Paid' | 'Pending' | 'Cash On Delivery') => {
     setIsProcessing(false);
     
     // Trigger festive confetti
@@ -114,12 +114,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     // Make sure to add this key from your Razorpay Dashboard!
     const RAZORPAY_KEY = "rzp_test_TdqYk79sH1g2Qn"; 
     
-    if (RAZORPAY_KEY === "rzp_test_YOUR_KEY_HERE") {
-      alert("Please provide your Razorpay Key ID to the AI so it can activate the payment gateway!");
+    if (typeof (window as any).Razorpay === 'undefined') {
+      alert("The Razorpay payment gateway failed to load. Please check your internet connection or restart the app.");
       return;
     }
 
-    const options = {
+    try {
+      const options = {
       key: RAZORPAY_KEY,
       amount: Math.round(orderData.total * 100), // Razorpay takes amount in paise
       currency: "INR",
@@ -146,6 +147,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     
     setIsProcessing(true);
     rzp.open();
+    } catch (e: any) {
+      alert("Error opening Razorpay: " + e.message);
+      setIsProcessing(false);
+    }
   };
 
   return (

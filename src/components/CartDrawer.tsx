@@ -187,7 +187,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     onProceedToPayment({
       items: cartItems,
       address: finalAddress,
-      deliverySlot: deliverySlot,
+      deliverySlot: "Express Delivery (35 mins)",
       subtotal: itemsTotal,
       tintingCharges: 0,
       deliveryFee: deliveryFee,
