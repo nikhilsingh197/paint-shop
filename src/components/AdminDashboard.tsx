@@ -121,6 +121,50 @@ export default function AdminDashboard() {
     if (!error) setDeliveryPartners(data || []);
   };
 
+  // --- REALTIME NEW ORDER ALERT ---
+  useEffect(() => {
+    const orderChannel = supabase
+      .channel('admin-new-orders')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        (payload) => {
+          // Play EXTREMELY loud alarm clock sound and loop it
+          const audio = new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg');
+          audio.volume = 1.0;
+          audio.loop = true;
+          audio.play().catch(e => console.log('Siren autoplay blocked by browser:', e));
+          
+          // Stop the alarm after 4.5 seconds
+          setTimeout(() => {
+            audio.pause();
+            audio.currentTime = 0;
+          }, 4500);
+          
+          // Show browser notification if possible
+          if (Notification.permission === 'granted') {
+            new Notification('New Order Received!', {
+              body: 'A customer just placed a new order. Check the live orders tab!',
+              icon: '/icon.png' // assuming icon exists
+            });
+          }
+          
+          // Instantly refresh the orders list
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    // Ask for notification permission on load just in case
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
+    return () => {
+      supabase.removeChannel(orderChannel);
+    };
+  }, []);
+
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     setUpdatingId(orderId);
     const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", orderId);
