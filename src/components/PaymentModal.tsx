@@ -33,7 +33,7 @@ interface PaymentModalProps {
   onPaymentSuccess: (order: OrderRecord) => void;
 }
 
-type PaymentMethodType = 'upi_app' | 'upi_qr' | 'card' | 'netbanking' | 'cod';
+type PaymentMethodType = 'upi_app' | 'upi_qr' | 'card' | 'netbanking';
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
   orderData,
@@ -110,12 +110,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   };
 
   const handleExecutePayment = () => {
-    if (selectedMethod === 'cod') {
-      setIsProcessing(true);
-      setTimeout(() => finalizeOrder('Cash on Delivery', 'Cash On Delivery'), 1500);
-      return;
-    }
-
     // --- RAZORPAY INTEGRATION ---
     // Make sure to add this key from your Razorpay Dashboard!
     const RAZORPAY_KEY = "rzp_test_TdqYk79sH1g2Qn"; 
@@ -259,20 +253,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               </div>
             </button>
 
-            <button
-              onClick={() => setSelectedMethod('cod')}
-              className={`w-full p-2.5 rounded-xl text-left border flex items-center gap-2.5 transition-all cursor-pointer ${
-                selectedMethod === 'cod'
-                  ? 'bg-white border-emerald-600 shadow-xs ring-1 ring-emerald-600 text-slate-900 font-bold'
-                  : 'border-slate-200 text-slate-600 hover:bg-white'
-              }`}
-            >
-              <Banknote className="w-4 h-4 text-emerald-700 shrink-0" />
-              <div className="text-xs">
-                <div className="font-bold">Cash on Delivery</div>
-                <div className="text-[10px] text-slate-400">Pay delivery rider</div>
-              </div>
-            </button>
           </div>
 
           {/* Payment Detail Form View (7 cols) */}
@@ -454,19 +434,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 </div>
               )}
 
-              {/* Option 5: COD */}
-              {selectedMethod === 'cod' && (
-                <div className="space-y-3 p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs">
-                  <div className="font-extrabold text-amber-950 flex items-center gap-1.5">
-                    <Banknote className="w-4 h-4 text-amber-700" />
-                    <span>Pay at Doorstep in Jamshedpur</span>
-                  </div>
-                  <p className="text-[11px] text-amber-800 leading-relaxed">
-                    You can pay in cash or scan the delivery partner's UPI QR code upon arrival. Please keep exact change of <strong>₹{orderData.total}</strong> ready.
-                  </p>
-                </div>
-              )}
-            </div>
+              </div>
 
             {/* Pay Button Action */}
             <div className="mt-4 pt-3 border-t border-slate-200">
@@ -479,13 +447,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 {isProcessing ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Verifying with Nikhil Paints Banking Portal...</span>
+                    <span>Processing securely...</span>
                   </>
                 ) : (
                   <>
                     <Lock className="w-4 h-4" />
                     <span>
-                      {selectedMethod === 'cod' ? `Confirm Order (₹${orderData.total})` : `Pay ₹${orderData.total} & Start Tinting`}
+                      Pay ₹{orderData.total} & Start Tinting
                     </span>
                   </>
                 )}

@@ -173,7 +173,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     }, 250);
   };
 
-  const handlePaymentBypass = async () => {
+  const handleInitiateCheckout = () => {
     if (!user) return alert("Please login or create an account to place your order.");
     
     const finalAddress = (selectedAddressId && profile?.saved_addresses && !isAddingAddress)
@@ -183,56 +183,18 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     if (!finalAddress.fullName || !finalAddress.phone || !finalAddress.streetAddress) return alert("Please fill in your complete delivery details.");
     if (hasGst && (!gstin || !companyName)) return alert("Please fill in your Company Name and GSTIN.");
 
-    try {
-      setCheckoutStep("processing");
-
-      // Save newest address to user profile
-      if (isAddingAddress || !profile?.saved_addresses || profile.saved_addresses.length === 0) {
-        const newSavedAddress = {
-          id: crypto.randomUUID(),
-          type: 'Home' as const,
-          fullName: finalAddress.fullName,
-          phone: finalAddress.phone,
-          streetAddress: finalAddress.streetAddress,
-          area: finalAddress.area,
-          landmark: finalAddress.landmark,
-          latitude: finalAddress.latitude,
-          longitude: finalAddress.longitude
-        };
-        const updatedAddresses = [...(profile?.saved_addresses || []), newSavedAddress];
-        await updateProfile({ saved_addresses: updatedAddresses });
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
-
-      const { data: dbOrder, error } = await supabase
-        .from("orders")
-        .insert({
-          user_id: user.id,
-          total_amount: Math.round(finalTotal),
-          status: "paid",
-          items: cartItems,
-          delivery_address: finalAddress,
-          delivery_otp: generatedOtp,
-          // --- NEW: Injecting GST Details ---
-          gst_details: hasGst ? { hasGst: true, gstin, companyName } : { hasGst: false }
-        })
-        .select().single();
-
-      if (error) throw error;
-
-      setOrderId(dbOrder.id.slice(-6).toUpperCase());
-      setDeliveryOtpDisplay(generatedOtp);
-      setCheckoutStep("success");
-      triggerConfetti();
-      onClearCart();
-    } catch (err: any) {
-      console.error("Test Payment error:", err);
-      alert("Failed to proceed with test payment: " + err.message);
-      setCheckoutStep("cart");
-    }
+    // Pass the data to App.tsx so it can open the Razorpay Payment Modal
+    onProceedToPayment({
+      items: cartItems,
+      address: finalAddress,
+      deliverySlot: deliverySlot,
+      subtotal: itemsTotal,
+      tintingCharges: 0,
+      deliveryFee: deliveryFee,
+      loyaltyDiscount: 0,
+      tax: gstAmount,
+      total: finalTotal
+    });
   };
 
   const closeAndReset = () => {
@@ -393,7 +355,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             
             <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:w-[448px] z-[100] pointer-events-none animate-in slide-in-from-bottom-5">
               <div className="bg-white/95 backdrop-blur-md p-4 rounded-[22px] shadow-[0_20px_55px_-20px_rgba(0,0,0,0.3)] border border-slate-200 pointer-events-auto">
-                <button onClick={handlePaymentBypass} className="w-full py-3.5 px-5 rounded-xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer active:scale-95">
+                <button onClick={handleInitiateCheckout} className="w-full py-3.5 px-5 rounded-xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer active:scale-95">
                   <div className="text-left">
                     <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Complete Order</div>
                     <div className="text-base font-black tracking-tight leading-none mt-0.5">₹{finalTotal.toFixed(2)}</div>

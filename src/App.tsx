@@ -274,11 +274,37 @@ export default function App() {
     setPaymentModalData({ isOpen: true, orderData: orderData });
   };
 
-  const handlePaymentSuccess = (newOrder: OrderRecord) => {
+  const handlePaymentSuccess = async (newOrder: OrderRecord) => {
+    // 1. Save Razorpay Transaction and Order details to the database
+    const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    
+    if (user) {
+      try {
+        const { error } = await supabase.from("orders").insert({
+          user_id: user.id,
+          total_amount: Math.round(newOrder.total),
+          status: "paid",
+          items: newOrder.items,
+          delivery_address: newOrder.address,
+          delivery_otp: generatedOtp,
+          payment_info: {
+            method: newOrder.paymentMethod, // Captures "Razorpay (pay_xxx)"
+            status: newOrder.paymentStatus
+          }
+        });
+        if (error) console.error("Database Insert Error:", error);
+      } catch (err) {
+        console.error("Failed to save to Supabase:", err);
+      }
+    }
+
+    // 2. Update local state
     setOrders((prev) => [newOrder, ...prev]);
     setCartItems([]);
     setPaymentModalData({ isOpen: false });
-    setTrackingOrder(newOrder);
+    
+    // Add the OTP to the tracking order so it displays on the screen
+    setTrackingOrder({ ...newOrder, delivery_otp: generatedOtp } as any);
   };
 
   const handleReorder = (order: OrderRecord) => {

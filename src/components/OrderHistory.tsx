@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import {
   Package, Truck, CheckCircle2, Clock, PaintBucket,
   Droplet, Box, UserCheck, PhoneCall, ShoppingBag,
-  MapPin, KeyRound, Navigation, FileText
+  MapPin, KeyRound, Navigation, FileText, CreditCard
 } from "lucide-react";
 import { InvoiceModal } from "./InvoiceModal"; 
 
@@ -278,6 +278,23 @@ console.log("ACTUAL DB DATA:", ordersData);
                           {order.delivery_address?.landmark && <span className="block mt-1 pt-1 border-t border-slate-100 text-slate-500">Landmark: {order.delivery_address?.landmark}</span>}
                         </div>
                       </div>
+
+                      {order.payment_info && (
+                        <div className="mt-4">
+                          <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-emerald-500" /> Payment Details
+                          </h4>
+                          <div className="bg-white p-3.5 rounded-2xl border border-slate-100 text-xs shadow-sm flex items-center justify-between">
+                            <div>
+                              <span className="font-bold text-slate-500 block mb-0.5">Transaction ID</span>
+                              <span className="font-black text-slate-900 text-sm tracking-tight">{order.payment_info.method}</span>
+                            </div>
+                            <div className="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg font-black uppercase tracking-wider text-[10px]">
+                              {order.payment_info.status}
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="mt-4 pt-4 border-t border-slate-200/50 grid grid-cols-2 gap-2">
                          <button
