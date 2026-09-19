@@ -97,6 +97,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window !== 'undefined' && (window as any).Capacitor) {
       import('@capacitor/app').then(({ App: CapacitorApp }) => {
         appListener = CapacitorApp.addListener('appUrlOpen', async (event) => {
+          
+          // CRITICAL: Close the Capacitor Browser if it's our OAuth callback
+          if (event.url.includes('com.nikhilpaints.app://')) {
+            import('@capacitor/browser').then(({ Browser }) => {
+              Browser.close().catch(() => {});
+            });
+          }
+
           if (event.url.includes('#access_token=')) {
             // Supabase client automatically picks up URL hash fragments in standard setup,
             // but for Capacitor, you may need to manually parse and set session if it doesn't.

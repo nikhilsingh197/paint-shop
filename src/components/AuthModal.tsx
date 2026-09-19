@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, Mail, Lock, ArrowRight, Sparkles, Smartphone, KeyRound } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { Capacitor } from '@capacitor/core';
 
 export default function AuthModal({ onClose }: { onClose: () => void }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,7 +18,7 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
     setLoading(true);
     setError(null);
     try {
-      const isNative = (window as any).Capacitor?.isNative;
+      const isNative = Capacitor.isNativePlatform();
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {

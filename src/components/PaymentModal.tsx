@@ -64,56 +64,94 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     });
   };
 
+  const finalizeOrder = (paymentMethodName: string, paymentStatusName: string) => {
+    setIsProcessing(false);
+    
+    // Trigger festive confetti
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+
+    const orderId = `NK-${Math.floor(10000 + Math.random() * 90000)}`;
+    const now = new Date();
+    const dateStr = `${now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+    const newOrder: OrderRecord = {
+      id: orderId,
+      date: dateStr,
+      items: orderData.items,
+      subtotal: orderData.subtotal,
+      tintingCharges: orderData.tintingCharges,
+      deliveryFee: orderData.deliveryFee,
+      loyaltyDiscount: orderData.loyaltyDiscount,
+      tax: orderData.tax,
+      total: orderData.total,
+      deliverySlot: orderData.deliverySlot,
+      address: orderData.address,
+      paymentMethod: paymentMethodName,
+      paymentStatus: paymentStatusName,
+      status: 'Order Placed',
+      estimatedDeliveryTime: `${getDeliveryTime(orderData.address.area)} from now`,
+      trackingStepIndex: 0,
+      batchFormulaId: `NP-TINT-AUTO-${Math.floor(1000 + Math.random() * 9000)}-SAKCHI`,
+      riderInfo: {
+        name: 'Rajesh Kumar Mahto',
+        phone: '+91 98351 77312',
+        vehicleNumber: 'JH-05-BQ-4412 (Honda Activa Delivery Hub)',
+        rating: 4.95,
+        currentLatOffset: 0.015,
+        currentLngOffset: 0.012
+      }
+    };
+
+    onPaymentSuccess(newOrder);
+  };
+
   const handleExecutePayment = () => {
-    setIsProcessing(true);
+    if (selectedMethod === 'cod') {
+      setIsProcessing(true);
+      setTimeout(() => finalizeOrder('Cash on Delivery', 'Cash On Delivery'), 1500);
+      return;
+    }
 
-    setTimeout(() => {
+    // --- RAZORPAY INTEGRATION ---
+    // Make sure to add this key from your Razorpay Dashboard!
+    const RAZORPAY_KEY = "rzp_test_TdqYk79sH1g2Qn"; 
+    
+    if (RAZORPAY_KEY === "rzp_test_YOUR_KEY_HERE") {
+      alert("Please provide your Razorpay Key ID to the AI so it can activate the payment gateway!");
+      return;
+    }
+
+    const options = {
+      key: RAZORPAY_KEY,
+      amount: Math.round(orderData.total * 100), // Razorpay takes amount in paise
+      currency: "INR",
+      name: "Nikhil Paints",
+      description: "App Order",
+      handler: function (response: any) {
+        // Payment success!
+        finalizeOrder(`Razorpay (${response.razorpay_payment_id})`, 'Paid');
+      },
+      prefill: {
+        name: orderData.address.name,
+        contact: orderData.address.phone
+      },
+      theme: {
+        color: "#0891b2" // Cyan 600
+      }
+    };
+
+    const rzp = new (window as any).Razorpay(options);
+    rzp.on('payment.failed', function (response: any){
+      alert("Payment Failed: " + response.error.description);
       setIsProcessing(false);
-      
-      // Trigger festive confetti
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-
-      const orderId = `NK-${Math.floor(10000 + Math.random() * 90000)}`;
-      const now = new Date();
-      const dateStr = `${now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-
-      const newOrder: OrderRecord = {
-        id: orderId,
-        date: dateStr,
-        items: orderData.items,
-        subtotal: orderData.subtotal,
-        tintingCharges: orderData.tintingCharges,
-        deliveryFee: orderData.deliveryFee,
-        loyaltyDiscount: orderData.loyaltyDiscount,
-        tax: orderData.tax,
-        total: orderData.total,
-        deliverySlot: orderData.deliverySlot,
-        address: orderData.address,
-        paymentMethod: selectedMethod === 'upi_app' ? `UPI (${selectedUpiApp.toUpperCase()})` :
-                       selectedMethod === 'upi_qr' ? 'UPI Dynamic QR' :
-                       selectedMethod === 'card' ? `Card ending in ${cardData.cardNumber.slice(-4)}` :
-                       selectedMethod === 'netbanking' ? `NetBanking (${selectedBank.toUpperCase()})` : 'Cash on Delivery',
-        paymentStatus: selectedMethod === 'cod' ? 'Cash On Delivery' : 'Paid',
-        status: 'Order Placed',
-        estimatedDeliveryTime: `${getDeliveryTime(orderData.address.area)} from now`,
-        trackingStepIndex: 0,
-        batchFormulaId: `NP-TINT-AUTO-${Math.floor(1000 + Math.random() * 9000)}-SAKCHI`,
-        riderInfo: {
-          name: 'Rajesh Kumar Mahto',
-          phone: '+91 98351 77312',
-          vehicleNumber: 'JH-05-BQ-4412 (Honda Activa Delivery Hub)',
-          rating: 4.95,
-          currentLatOffset: 0.015,
-          currentLngOffset: 0.012
-        }
-      };
-
-      onPaymentSuccess(newOrder);
-    }, 1800);
+    });
+    
+    setIsProcessing(true);
+    rzp.open();
   };
 
   return (
