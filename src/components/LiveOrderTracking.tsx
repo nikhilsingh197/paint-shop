@@ -118,7 +118,7 @@ export const LiveOrderTracking: React.FC<LiveOrderTrackingProps> = ({
   const currentStepIndex = TRACKING_STEPS.findIndex(
     (step) => step.id === currentStatus,
   );
-  const displayId = order.id?.split("-")[0].toUpperCase() || "UNKNOWN";
+  const displayId = order.id ? (order.id.includes('-') ? order.id.split("-")[0].toUpperCase() : order.id.slice(0, 6).toUpperCase()) : "UNKNOWN";
   const address = order.delivery_address || {};
 
   return (

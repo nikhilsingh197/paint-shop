@@ -279,7 +279,7 @@ console.log("ACTUAL DB DATA:", ordersData);
                         </div>
                       </div>
 
-                      {order.payment_info && (
+                      {(order.payment_info || (order.gst_details && order.gst_details.payment_method)) && (
                         <div className="mt-4">
                           <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
                             <CreditCard className="w-4 h-4 text-emerald-500" /> Payment Details
@@ -287,10 +287,10 @@ console.log("ACTUAL DB DATA:", ordersData);
                           <div className="bg-white p-3.5 rounded-2xl border border-slate-100 text-xs shadow-sm flex items-center justify-between">
                             <div>
                               <span className="font-bold text-slate-500 block mb-0.5">Transaction ID</span>
-                              <span className="font-black text-slate-900 text-sm tracking-tight">{order.payment_info.method}</span>
+                              <span className="font-black text-slate-900 text-sm tracking-tight">{order.payment_info?.method || order.gst_details?.payment_method}</span>
                             </div>
                             <div className="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg font-black uppercase tracking-wider text-[10px]">
-                              {order.payment_info.status}
+                              {order.payment_info?.status || order.gst_details?.payment_status}
                             </div>
                           </div>
                         </div>

@@ -1,1 +1,1 @@
-import { createClient } from '@supabase/supabase-js'; import 'dotenv/config'; const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY); supabase.from('orders').insert({ this_column_does_not_exist: true }).then(res => console.log(res.error));
+import { createClient } from '@supabase/supabase-js'; import 'dotenv/config'; const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY); supabase.from('orders').select('gst_details').limit(1).then(res => console.log(res));

@@ -278,33 +278,47 @@ export default function App() {
     // 1. Save Razorpay Transaction and Order details to the database
     const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
     
+    let finalOrder = { ...newOrder, delivery_otp: generatedOtp } as any;
+
     if (user) {
       try {
-        const { error } = await supabase.from("orders").insert({
+        const { data, error } = await supabase.from("orders").insert({
           user_id: user.id,
           total_amount: Math.round(newOrder.total),
           status: "paid",
           items: newOrder.items,
           delivery_address: newOrder.address,
           delivery_otp: generatedOtp,
-          payment_info: {
-            method: newOrder.paymentMethod, // Captures "Razorpay (pay_xxx)"
-            status: newOrder.paymentStatus
+          // Store payment info in the existing JSONB column to avoid schema errors!
+          gst_details: {
+            payment_method: newOrder.paymentMethod,
+            payment_status: newOrder.paymentStatus
           }
-        });
-        if (error) console.error("Database Insert Error:", error);
+        }).select().single();
+
+        if (error) {
+          console.error("Database Insert Error:", error);
+          alert("Could not save order to database. Check internet connection.");
+        } else if (data) {
+          finalOrder = {
+             ...newOrder,
+             id: data.id,
+             date: new Date(data.created_at).toLocaleString(),
+             delivery_otp: generatedOtp
+          };
+        }
       } catch (err) {
         console.error("Failed to save to Supabase:", err);
       }
     }
 
     // 2. Update local state
-    setOrders((prev) => [newOrder, ...prev]);
+    setOrders((prev) => [finalOrder, ...prev]);
     setCartItems([]);
     setPaymentModalData({ isOpen: false });
     
     // Add the OTP to the tracking order so it displays on the screen
-    setTrackingOrder({ ...newOrder, delivery_otp: generatedOtp } as any);
+    setTrackingOrder(finalOrder);
   };
 
   const handleReorder = (order: OrderRecord) => {
