@@ -40,18 +40,15 @@ export default function ProfileSettingsModal({ isOpen, onClose, onTabChange, onR
           </div>
         </div>
 
-        {/* Top 3 Quick Links */}
-        <div className="grid grid-cols-3 gap-3 mt-8">
+        {/* Top Quick Links */}
+        <div className="grid grid-cols-2 gap-3 mt-8">
           <button onClick={() => { if(onTabChange) onTabChange("history"); onClose(); }} className="bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform">
             <div className="bg-amber-50 p-2.5 rounded-full text-amber-600"><Package className="w-5 h-5" /></div>
             <span className="text-[10px] font-extrabold text-slate-800 text-center">Your orders</span>
           </button>
-          <button className="bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform">
-            <div className="bg-emerald-50 p-2.5 rounded-full text-emerald-600"><Coins className="w-5 h-5" /></div>
-            <span className="text-[10px] font-extrabold text-slate-800 text-center">Rang Coins</span>
-          </button>
-          <button className="bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform">
-            <div className="bg-blue-50 p-2.5 rounded-full text-blue-600"><MessageCircle className="w-5 h-5" /></div>
+          
+          <button onClick={() => window.open('https://wa.me/917004734407?text=Hi%2C%20I%20need%20help%20with%20my%20Paint%20Shop%20order.', '_blank')} className="bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform">
+            <div className="bg-emerald-50 p-2.5 rounded-full text-emerald-600"><MessageCircle className="w-5 h-5" /></div>
             <span className="text-[10px] font-extrabold text-slate-800 text-center">Need help?</span>
           </button>
         </div>
