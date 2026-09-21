@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Search, MapPin, Plus, Home, Briefcase, Map, Crosshair, ExternalLink, MessageCircle } from "lucide-react";
+import { X, Search, MapPin, Plus, Home, Briefcase, Map, Crosshair, ExternalLink, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import { useAuth, SavedAddress } from "../context/AuthContext";
 import { v4 as uuidv4 } from "uuid";
 
@@ -22,6 +22,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
   const { user, profile, updateProfile } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   
   const [newAddress, setNewAddress] = useState<Partial<SavedAddress>>({
     type: "Home",
@@ -42,7 +43,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
       return;
     }
     const addressToSave: SavedAddress = {
-      id: uuidv4(),
+      id: editingAddressId || uuidv4(),
       type: newAddress.type as any,
       fullName: newAddress.fullName!,
       phone: newAddress.phone!,
@@ -53,9 +54,16 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
       longitude: newAddress.longitude
     };
 
-    const updatedAddresses = [addressToSave, ...savedAddresses];
+    let updatedAddresses = [];
+    if (editingAddressId) {
+      updatedAddresses = savedAddresses.map(a => a.id === editingAddressId ? addressToSave : a);
+    } else {
+      updatedAddresses = [addressToSave, ...savedAddresses];
+    }
+
     await updateProfile({ saved_addresses: updatedAddresses });
     setIsAddingNew(false);
+    setEditingAddressId(null);
     onSelect(addressToSave);
     onClose();
   };
@@ -75,6 +83,14 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
     }, (error) => {
       alert("Unable to retrieve location. Please grant location permissions in your browser/app settings.");
     });
+  };
+
+  const handleDeleteAddress = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm("Are you sure you want to delete this address?")) {
+      const updatedAddresses = savedAddresses.filter(a => a.id !== id);
+      await updateProfile({ saved_addresses: updatedAddresses });
+    }
   };
 
   const renderIcon = (type: string) => {
@@ -205,12 +221,25 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
                               <p className="text-xs text-slate-600 font-medium leading-relaxed mb-1.5 line-clamp-2">
                                 {addr.streetAddress}, {addr.area}, {addr.landmark ? `Near ${addr.landmark}, ` : ''}Jamshedpur
                               </p>
-                              <div className="text-[11px] font-bold text-slate-400">
-                                Phone number: <span className="text-slate-700">{addr.phone}</span>
+                                <div className="text-[11px] font-bold text-slate-400">
+                                  Phone number: <span className="text-slate-700">{addr.phone}</span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100/60">
+                                  <button onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    setNewAddress(addr); 
+                                    setEditingAddressId(addr.id); 
+                                    setIsAddingNew(true); 
+                                  }} className="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-emerald-600 px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-emerald-50 transition-colors">
+                                    <Pencil className="w-3 h-3" /> Edit
+                                  </button>
+                                  <button onClick={(e) => handleDeleteAddress(addr.id, e)} className="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-rose-600 px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-rose-50 transition-colors">
+                                    <Trash2 className="w-3 h-3" /> Delete
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
                       );
                     })}
                   </div>
