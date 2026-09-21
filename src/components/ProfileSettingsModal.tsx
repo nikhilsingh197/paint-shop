@@ -63,47 +63,10 @@ export default function ProfileSettingsModal({ isOpen, onClose, onTabChange, onR
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
           <h3 className="text-xs font-black text-slate-800 px-4 py-4 bg-white border-b border-slate-50">Your information</h3>
           
-          <button onClick={() => { if(onRequestLocationChange) onRequestLocationChange(); onClose(); }} className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
+          <button onClick={() => { if(onRequestLocationChange) onRequestLocationChange(); onClose(); }} className="w-full flex items-center justify-between px-4 py-4 active:bg-slate-50 transition-colors">
             <div className="flex items-center gap-3">
               <MapPin className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
               <span className="text-sm font-bold text-slate-700">Address book</span>
-            </div>
-            <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
-          </button>
-          
-          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <Heart className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
-              <span className="text-sm font-bold text-slate-700">Your wishlist</span>
-            </div>
-            <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
-          </button>
-          
-          <button className="w-full flex items-center justify-between px-4 py-4 active:bg-slate-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <FileText className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
-              <span className="text-sm font-bold text-slate-700">GST details</span>
-            </div>
-            <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
-          </button>
-        </div>
-
-        {/* Payment and coupons */}
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-          <h3 className="text-xs font-black text-slate-800 px-4 py-4 bg-white border-b border-slate-50">Payment and coupons</h3>
-          
-          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <Wallet className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
-              <span className="text-sm font-bold text-slate-700">Payment settings</span>
-            </div>
-            <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
-          </button>
-          
-          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <Gift className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
-              <span className="text-sm font-bold text-slate-700">Claim Gift card</span>
             </div>
             <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
           </button>
