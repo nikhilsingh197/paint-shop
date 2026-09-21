@@ -138,6 +138,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .eq('id', user.id)
       .select()
       .single();
+    if (error) {
+      console.error("Failed to update profile:", error);
+      alert("Failed to save changes: " + error.message);
+    }
     if (data) setProfile(data);
   };
 
