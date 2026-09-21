@@ -44,7 +44,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [companyName, setCompanyName] = useState("");
 
   const [address, setAddress] = useState<DeliveryAddress>({
-    fullName: "", phone: "", area: currentArea || "Mango",
+    fullName: "", phone: "", area: typeof currentLocation === 'string' ? currentLocation : (currentLocation?.area || "Mango"),
     streetAddress: "", landmark: "", pincode: "831012", city: "Jamshedpur",
   });
   
@@ -58,7 +58,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         const { data, error } = await supabase.from('store_settings').select('is_open').eq('id', 1).single();
         
         // --- PRINT THE SECRET ERROR TO THE CONSOLE ---
-        console.log("🚨 STORE STATUS CHECK -> Data:", data, "Error:", error);
+        console.log("🔥 STORE STATUS CHECK -> Data:", data, "Error:", error);
         
         // Only update if we successfully got data, and explicitly set it to false if the DB says false
         if (data !== null) {
@@ -72,9 +72,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   // SYNC AREA WITH GLOBAL HEADER
   useEffect(() => {
     if (isOpen) {
-      setAddress((prev) => ({ ...prev, area: currentArea }));
+      setAddress((prev) => ({ ...prev, area: typeof currentLocation === 'string' ? currentLocation : (currentLocation?.area || "Mango") }));
     }
-  }, [isOpen, currentArea]);
+  }, [isOpen, currentLocation]);
 
   // AUTO-FILL SAVED ADDRESS WHEN CART OPENS
   useEffect(() => {
