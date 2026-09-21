@@ -357,11 +357,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <div className="bg-white/95 backdrop-blur-md p-4 rounded-[22px] shadow-[0_20px_55px_-20px_rgba(0,0,0,0.3)] border border-slate-200 pointer-events-auto">
                 <button onClick={handleInitiateCheckout} className="w-full py-3.5 px-5 rounded-xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer active:scale-95">
                   <div className="text-left">
-                    <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Complete Order</div>
+                    <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Secure Checkout</div>
                     <div className="text-base font-black tracking-tight leading-none mt-0.5">₹{finalTotal.toFixed(2)}</div>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-bold bg-white/10 px-4 py-2 rounded-xl">
-                    <span>Place Order</span><ArrowRight className="w-4 h-4" />
+                    <span>Proceed to Pay</span><ArrowRight className="w-4 h-4" />
                   </div>
                 </button>
               </div>

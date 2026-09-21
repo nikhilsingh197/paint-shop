@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { supabase } from "./supabaseClient";
+import confetti from "canvas-confetti";
 import { fetchProducts } from "./lib/productApi";
 import AdminDashboard from "./components/AdminDashboard";
 import { useAuth } from "./context/AuthContext";
@@ -28,7 +29,6 @@ import { BrandSelector } from "./components/BrandSelector";
 import { ProductCard } from "./components/ProductCard";
 import { ShadePickerModal } from "./components/ShadePickerModal";
 import { CartDrawer } from "./components/CartDrawer";
-import { PaymentModal } from "./components/PaymentModal";
 import { LiveOrderTracking } from "./components/LiveOrderTracking";
 import { PaintConsultantChat } from "./components/PaintConsultantChat";
 import { OrderHistory } from "./components/OrderHistory";
@@ -141,13 +141,6 @@ export default function App() {
     product?: ProductItem;
     currentShade?: ShadeItem;
     isDirectAddToCart?: boolean;
-  }>({
-    isOpen: false,
-  });
-
-  const [paymentModalData, setPaymentModalData] = useState<{
-    isOpen: boolean;
-    orderData?: any;
   }>({
     isOpen: false,
   });
@@ -271,13 +264,85 @@ export default function App() {
   
   const handleProceedToPayment = (orderData: any) => {
     setIsCartOpen(false);
-    setPaymentModalData({ isOpen: true, orderData: orderData });
+
+    const RAZORPAY_KEY = "rzp_test_TdqYk79sH1g2Qn"; 
+    
+    if (typeof (window as any).Razorpay === 'undefined') {
+      alert("The Razorpay payment gateway failed to load. Please check your internet connection or restart the app.");
+      return;
+    }
+
+    try {
+      const options = {
+        key: RAZORPAY_KEY,
+        amount: Math.round(orderData.total * 100),
+        currency: "INR",
+        name: "Nikhil Paints",
+        description: "App Order",
+        handler: function (response: any) {
+          finalizeAndSaveOrder(orderData, `Razorpay (${response.razorpay_payment_id})`, 'Paid');
+        },
+        prefill: {
+          name: orderData.address.name,
+          contact: orderData.address.phone
+        },
+        theme: { color: "#0891b2" }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any){
+        finalizeAndSaveOrder(orderData, `Razorpay (Failed)`, 'Failed');
+        alert("Payment Failed: " + response.error.description);
+      });
+      
+      rzp.open();
+    } catch (e: any) {
+      alert("Error opening Razorpay: " + e.message);
+    }
   };
 
-  const handlePaymentSuccess = async (newOrder: OrderRecord) => {
-    // 1. Save Razorpay Transaction and Order details to the database
+  const finalizeAndSaveOrder = async (orderData: any, paymentMethod: string, paymentStatus: 'Paid' | 'Pending' | 'Failed') => {
+    if (paymentStatus === 'Paid') {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+
+    const orderId = `NK-${Math.floor(10000 + Math.random() * 90000)}`;
+    const now = new Date();
+    const dateStr = `${now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+    const newOrder: OrderRecord = {
+      id: orderId,
+      date: dateStr,
+      items: orderData.items,
+      subtotal: orderData.subtotal,
+      tintingCharges: orderData.tintingCharges,
+      deliveryFee: orderData.deliveryFee,
+      loyaltyDiscount: orderData.loyaltyDiscount,
+      tax: orderData.tax,
+      total: orderData.total,
+      deliverySlot: orderData.deliverySlot,
+      address: orderData.address,
+      paymentMethod: paymentMethod,
+      paymentStatus: paymentStatus,
+      status: paymentStatus === 'Failed' ? 'Payment Failed' : 'Order Placed',
+      estimatedDeliveryTime: `${getDeliveryTime(orderData.address.area)} from now`,
+      trackingStepIndex: 0,
+      batchFormulaId: `NP-TINT-AUTO-${Math.floor(1000 + Math.random() * 9000)}-SAKCHI`,
+      riderInfo: {
+        name: 'Rajesh Kumar Mahto',
+        phone: '+91 98351 77312',
+        vehicleNumber: 'JH-05-BQ-4412 (Honda Activa Delivery Hub)',
+        rating: 4.95,
+        currentLatOffset: 0.015,
+        currentLngOffset: 0.012
+      }
+    };
+
     const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
-    
     let finalOrder = { ...newOrder, delivery_otp: generatedOtp } as any;
 
     if (user) {
@@ -285,14 +350,13 @@ export default function App() {
         const { data, error } = await supabase.from("orders").insert({
           user_id: user.id,
           total_amount: Math.round(newOrder.total),
-          status: "paid",
+          status: paymentStatus === 'Failed' ? 'failed' : 'paid',
           items: newOrder.items,
           delivery_address: newOrder.address,
           delivery_otp: generatedOtp,
-          // Store payment info in the existing JSONB column to avoid schema errors!
           gst_details: {
-            payment_method: newOrder.paymentMethod,
-            payment_status: newOrder.paymentStatus
+            payment_method: paymentMethod,
+            payment_status: paymentStatus
           }
         }).select().single();
 
@@ -312,13 +376,14 @@ export default function App() {
       }
     }
 
-    // 2. Update local state
     setOrders((prev) => [finalOrder, ...prev]);
-    setCartItems([]);
-    setPaymentModalData({ isOpen: false });
     
-    // Add the OTP to the tracking order so it displays on the screen
-    setTrackingOrder(finalOrder);
+    if (paymentStatus === 'Paid') {
+      setCartItems([]);
+      setTrackingOrder(finalOrder);
+    } else {
+      setActiveTab("history");
+    }
   };
 
   const handleReorder = (order: OrderRecord) => {
@@ -781,14 +846,6 @@ export default function App() {
         onProceedToPayment={handleProceedToPayment}
         onNavigateToOrders={() => setActiveTab("history")}
       />
-
-      {paymentModalData.isOpen && paymentModalData.orderData && (
-        <PaymentModal
-          orderData={paymentModalData.orderData}
-          onClose={() => setPaymentModalData({ isOpen: false })}
-          onPaymentSuccess={handlePaymentSuccess}
-        />
-      )}
 
       {trackingOrder && (
         <LiveOrderTracking

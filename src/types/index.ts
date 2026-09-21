@@ -76,7 +76,8 @@ export type OrderStatus =
   | 'Machine Tinting & Mixing'
   | 'Quality Checked & Packed'
   | 'Rider Out for Delivery'
-  | 'Delivered';
+  | 'Delivered'
+  | 'Payment Failed';
 
 export interface DeliveryAddress {
   fullName: string;
@@ -101,7 +102,7 @@ export interface OrderRecord {
   deliverySlot: string;
   address: DeliveryAddress;
   paymentMethod: string;
-  paymentStatus: 'Paid' | 'Pending' | 'Cash On Delivery';
+  paymentStatus: 'Paid' | 'Pending' | 'Failed' | 'Cash On Delivery';
   status: OrderStatus;
   estimatedDeliveryTime: string;
   trackingStepIndex: number; // 0 to 4

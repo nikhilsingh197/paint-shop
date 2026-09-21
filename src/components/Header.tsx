@@ -3,7 +3,7 @@ import {
   Zap,
   MapPin,
   Search,
-  Bell,
+  ShoppingCart,
   RotateCcw,
   ChevronDown,
   PhoneCall,
@@ -151,11 +151,11 @@ export const Header: React.FC<HeaderProps> = ({
                 <PhoneCall className="w-5 h-5" />
               </a>
 
-              <button onClick={onOpenNotifications} className="relative p-2.5 rounded-full bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
-                <Bell className="w-5 h-5" />
-                {unreadNotifsCount > 0 && (
+              <button onClick={onOpenCart} className="relative p-2.5 rounded-full bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
+                <ShoppingCart className="w-5 h-5" />
+                {totalCartCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-sm">
-                    {unreadNotifsCount}
+                    {totalCartCount}
                   </span>
                 )}
               </button>
