@@ -46,6 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [showAreaDropdown, setShowAreaDropdown] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   const { user, profile, signOut } = useAuth();
@@ -160,28 +161,31 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
 
               {user ? (
-                <div className="relative group z-50">
-                  <button className="flex items-center gap-1.5 p-1 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors cursor-pointer border border-slate-200">
+                <div className="relative z-50">
+                  <button onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} className="flex items-center gap-1.5 p-1 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors cursor-pointer border border-slate-200">
                     <span className="bg-indigo-600 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
                       {user.email?.charAt(0).toUpperCase() || <User className="w-4 h-4" />}
                     </span>
                   </button>
+                  
+                  {isUserMenuOpen && <div className="fixed inset-0 z-40" onClick={() => setIsUserMenuOpen(false)} />}
+                  
                   {/* Account Dropdown */}
-                  <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 origin-top-right">
+                  <div className={`absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl transition-all duration-200 origin-top-right z-50 ${isUserMenuOpen ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-95 pointer-events-none'}`}>
                     <div className="p-4 border-b border-slate-100">
                       <div className="font-bold text-slate-900 text-sm">My Account</div>
                       <div className="text-xs truncate text-slate-500 mt-0.5">{user.email}</div>
                     </div>
                     <div className="p-2">
-                      <button onClick={() => setIsProfileModalOpen(true)} className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-3 cursor-pointer">
+                      <button onClick={() => { setIsProfileModalOpen(true); setIsUserMenuOpen(false); }} className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-3 cursor-pointer">
                         <User className="w-4 h-4 text-slate-400" /> Edit Profile
                       </button>
-                      <button onClick={() => onTabChange("history")} className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-3 cursor-pointer mt-1">
+                      <button onClick={() => { onTabChange("history"); setIsUserMenuOpen(false); }} className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-3 cursor-pointer mt-1">
                         <RotateCcw className="w-4 h-4 text-slate-400" /> Past Orders
                       </button>
                     </div>
                     <div className="p-2 border-t border-slate-100">
-                      <button onClick={() => signOut()} className="w-full text-left px-3 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-3 cursor-pointer">
+                      <button onClick={() => { signOut(); setIsUserMenuOpen(false); }} className="w-full text-left px-3 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-3 cursor-pointer">
                         Sign Out
                       </button>
                     </div>
