@@ -19,6 +19,7 @@ import ProfileSettingsModal from "./ProfileSettingsModal";
 interface HeaderProps {
   currentArea: string;
   onAreaChange: (area: string) => void;
+  onRequestLocationChange?: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   activeTab: string;
@@ -33,6 +34,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   currentArea,
   onAreaChange,
+  onRequestLocationChange,
   searchQuery,
   onSearchChange,
   activeTab,
@@ -75,51 +77,24 @@ export const Header: React.FC<HeaderProps> = ({
             
             {/* Location Picker */}
             <div className="flex-1 min-w-0 md:flex-none">
-              <div className="text-[10px] sm:text-xs font-extrabold text-slate-800 flex items-center gap-1 uppercase tracking-wide">
-                <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                  <Zap className="w-3 h-3 text-amber-600 fill-amber-600" />
+              <div 
+                className="flex items-center gap-1.5 sm:gap-2 bg-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-2xl border border-slate-100 shadow-sm cursor-pointer hover:border-slate-300 transition-colors" 
+                onClick={onRequestLocationChange}
+              >
+                <div className="w-7 h-7 sm:w-9 sm:h-9 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
+                  <Zap className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
                 </div>
-                <span>Delivery in {getDeliveryTime(currentArea)}</span>
-              </div>
-              <div className="relative mt-0.5">
-                <button
-                  onClick={() => setShowAreaDropdown(!showAreaDropdown)}
-                  className="flex items-center gap-1 text-[13px] sm:text-sm text-slate-600 hover:text-slate-900 transition-colors cursor-pointer text-left w-full"
-                >
-                  <span className="truncate max-w-[150px] sm:max-w-[250px] font-medium">
-                    {currentArea}, Jamshedpur
-                  </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                </button>
-
-                {showAreaDropdown && (
-                  <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="text-[11px] font-bold text-slate-400 uppercase px-3 py-2 border-b border-slate-100 mb-1">
-                      Select Jamshedpur Locality
-                    </div>
-                    <div className="max-h-[60vh] overflow-y-auto">
-                      {JAMSHEDPUR_AREAS.map((area) => (
-                        <button
-                          key={area}
-                          onClick={() => {
-                            onAreaChange(area);
-                            setShowAreaDropdown(false);
-                          }}
-                          className={`w-full text-left px-3 py-2.5 text-sm rounded-xl flex items-center justify-between transition-colors ${
-                            currentArea === area
-                              ? "bg-amber-50 text-amber-900 font-bold"
-                              : "text-slate-700 hover:bg-slate-50 font-medium"
-                          }`}
-                        >
-                          <span>{area}</span>
-                          {currentArea === area && (
-                            <MapPin className="w-4 h-4 text-amber-600" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
+                <div className="min-w-0">
+                  <div className="text-[9px] sm:text-[10px] font-black text-amber-600 uppercase tracking-wider flex items-center gap-1">
+                    <span>Delivery in {getDeliveryTime(currentArea)}</span>
                   </div>
-                )}
+                  <div className="flex items-center gap-1 text-[13px] sm:text-sm text-slate-600 hover:text-slate-900 transition-colors text-left w-full">
+                    <span className="truncate max-w-[150px] sm:max-w-[250px] font-medium">
+                      {currentArea}, Jamshedpur
+                    </span>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  </div>
+                </div>
               </div>
             </div>
 

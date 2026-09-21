@@ -3,7 +3,7 @@ import { CartItem, DeliveryAddress } from "../types";
 import { JAMSHEDPUR_AREAS } from "../data/paintDatabase";
 import {
   ShoppingBag, Trash2, Plus, Minus, MapPin, ArrowRight,
-  CheckCircle2, Package, X, CreditCard, Crosshair, Truck
+  CheckCircle2, Package, X, CreditCard, Crosshair, Truck, Home, Zap
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
@@ -15,14 +15,15 @@ interface CartDrawerProps {
   cartItems: CartItem[];
   onUpdateQuantity: (id: string, newQty: number) => void;
   onClearCart: () => void;
-  currentArea: string;
+  currentLocation: any;
+  onRequestLocationChange: () => void;
   onProceedToPayment: (orderData: any) => void;
   onNavigateToOrders?: () => void;
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({
   isOpen, onClose, cartItems, onUpdateQuantity, onClearCart, 
-  currentArea, onProceedToPayment, onNavigateToOrders
+  currentLocation, onRequestLocationChange, onProceedToPayment, onNavigateToOrders
 }) => {
   const { user, profile, updateProfile } = useAuth();
 
@@ -176,14 +177,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const handleInitiateCheckout = () => {
     if (!user) return alert("Please login or create an account to place your order.");
     
-    const finalAddress = (selectedAddressId && profile?.saved_addresses && !isAddingAddress)
-      ? profile.saved_addresses.find(a => a.id === selectedAddressId) || address
-      : address;
+    if (typeof currentLocation === 'string') {
+      onRequestLocationChange();
+      return;
+    }
+
+    const finalAddress = currentLocation;
       
     if (!finalAddress.fullName || !finalAddress.phone || !finalAddress.streetAddress) return alert("Please fill in your complete delivery details.");
     if (hasGst && (!gstin || !companyName)) return alert("Please fill in your Company Name and GSTIN.");
 
-    // Pass the data to App.tsx so it can open the Razorpay Payment Modal
     onProceedToPayment({
       items: cartItems,
       address: finalAddress,
@@ -547,15 +550,33 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:w-[448px] z-[100] pointer-events-none animate-in slide-in-from-bottom-5">
                 <div className="bg-white/95 backdrop-blur-md p-4 rounded-[22px] shadow-[0_20px_55px_-20px_rgba(0,0,0,0.3)] border border-slate-200 pointer-events-auto">
                   {isStoreOpen ? (
-                    <button onClick={() => setCheckoutStep("address")} className="w-full py-3.5 px-5 rounded-xl bg-slate-900 hover:bg-black text-white shadow-xl transition-all flex items-center justify-between cursor-pointer active:scale-95">
-                      <div className="text-left">
-                        <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Total</div>
-                        <div className="text-base font-black tracking-tight leading-none mt-0.5">₹{finalTotal.toFixed(2)}</div>
+                    <>
+                      <div className="flex items-center justify-between mb-3 px-1 border-b border-slate-100 pb-3">
+                        <div className="flex items-start gap-2">
+                          <Home className="w-5 h-5 text-emerald-600 mt-0.5" />
+                          <div>
+                            <div className="text-sm font-bold text-slate-900">
+                              Delivering to {typeof currentLocation === 'object' ? currentLocation.type || "Address" : "Location"}
+                            </div>
+                            <div className="text-[10px] font-medium text-slate-500 line-clamp-1 max-w-[220px]">
+                              {typeof currentLocation === 'object' ? `${currentLocation.streetAddress}, ${currentLocation.area}` : `${currentLocation}, Jamshedpur`}
+                            </div>
+                          </div>
+                        </div>
+                        <button onClick={onRequestLocationChange} className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider">Change</button>
                       </div>
-                      <div className="flex items-center gap-2 text-xs font-bold bg-white/10 px-4 py-2 rounded-xl">
-                        <span>Checkout</span><ArrowRight className="w-4 h-4" />
-                      </div>
-                    </button>
+                      <button onClick={handleInitiateCheckout} className="w-full py-3.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/20 transition-all flex items-center justify-between cursor-pointer active:scale-95">
+                        <div className="text-left">
+                          <div className="text-[10px] text-emerald-100 uppercase tracking-wider font-bold flex items-center gap-1">
+                            Total
+                          </div>
+                          <div className="text-base font-black tracking-tight leading-none mt-0.5">₹{finalTotal.toFixed(2)}</div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs font-bold bg-white/10 px-4 py-2 rounded-xl">
+                          <span>Place Order</span><ArrowRight className="w-4 h-4" />
+                        </div>
+                      </button>
+                    </>
                   ) : (
                     <div className="w-full py-3.5 px-5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-center shadow-sm">
                       <div className="text-sm font-black tracking-tight mb-0.5">Store is Currently Closed</div>

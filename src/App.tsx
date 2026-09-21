@@ -28,6 +28,7 @@ import { MobileBottomNav } from "./components/MobileBottomNav";
 import { BrandSelector } from "./components/BrandSelector";
 import { ProductCard } from "./components/ProductCard";
 import { ShadePickerModal } from "./components/ShadePickerModal";
+import { LocationPickerModal } from "./components/LocationPickerModal";
 import { CartDrawer } from "./components/CartDrawer";
 import { LiveOrderTracking } from "./components/LiveOrderTracking";
 import { PaintConsultantChat } from "./components/PaintConsultantChat";
@@ -75,7 +76,10 @@ export default function App() {
   const [selectedBrand, setSelectedBrand] = useState<PaintBrand | "All">("All");
   const [selectedCategory, setSelectedCategory] = useState<PaintCategory | "All">("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentArea, setCurrentArea] = useState("Mango");
+  
+  const [currentLocation, setCurrentLocation] = useState<any>("Mango");
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+  const currentArea = typeof currentLocation === 'string' ? currentLocation : currentLocation.area;
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<OrderRecord[]>(INITIAL_ORDERS);
@@ -487,7 +491,8 @@ export default function App() {
             else setActiveTab(tab);
           }}
           currentArea={currentArea}
-          onAreaChange={setCurrentArea}
+          onAreaChange={setCurrentLocation}
+          onRequestLocationChange={() => setIsLocationPickerOpen(true)}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           cartItems={cartItems}
@@ -836,13 +841,21 @@ export default function App() {
         isDirectAddToCart={shadeModalConfig.isDirectAddToCart}
       />
 
+      <LocationPickerModal
+        isOpen={isLocationPickerOpen}
+        onClose={() => setIsLocationPickerOpen(false)}
+        currentSelection={currentLocation}
+        onSelect={setCurrentLocation}
+      />
+
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         cartItems={cartItems}
         onUpdateQuantity={handleUpdateQuantity}
         onClearCart={handleClearCart}
-        currentArea={currentArea}
+        currentLocation={currentLocation}
+        onRequestLocationChange={() => setIsLocationPickerOpen(true)}
         onProceedToPayment={handleProceedToPayment}
         onNavigateToOrders={() => setActiveTab("history")}
       />
