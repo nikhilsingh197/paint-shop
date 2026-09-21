@@ -4,7 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import {
   Package, Truck, CheckCircle2, Clock, PaintBucket,
   Droplet, Box, UserCheck, PhoneCall, ShoppingBag,
-  MapPin, KeyRound, Navigation, FileText, CreditCard
+  MapPin, KeyRound, Navigation, FileText, CreditCard,
+  XCircle
 } from "lucide-react";
 import { InvoiceModal } from "./InvoiceModal"; 
 
@@ -27,13 +28,14 @@ const getSafeDate = (order: any) => {
 };
 
 const ORDER_STATUSES = [
-  { id: "paid", label: "Order Placed", icon: Clock, color: "text-rose-600", bg: "bg-rose-100", border: "border-rose-200" },
+  { id: "paid", label: "Order Placed", icon: Clock, color: "text-blue-600", bg: "bg-blue-100", border: "border-blue-200" },
   { id: "getting_ready", label: "Preparing Paints", icon: PaintBucket, color: "text-amber-600", bg: "bg-amber-100", border: "border-amber-200" },
   { id: "tinted", label: "Tinting Colors", icon: Droplet, color: "text-purple-600", bg: "bg-purple-100", border: "border-purple-200" },
   { id: "packed", label: "Order Packed", icon: Box, color: "text-indigo-600", bg: "bg-indigo-100", border: "border-indigo-200" },
   { id: "assigned", label: "Driver Assigned", icon: UserCheck, color: "text-cyan-600", bg: "bg-cyan-100", border: "border-cyan-200" },
-  { id: "out_for_delivery", label: "Out for Delivery", icon: Truck, color: "text-blue-600", bg: "bg-blue-100", border: "border-blue-200" },
+  { id: "out_for_delivery", label: "Out for Delivery", icon: Truck, color: "text-indigo-600", bg: "bg-indigo-100", border: "border-indigo-200" },
   { id: "delivered", label: "Delivered", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-100", border: "border-emerald-200" },
+  { id: "failed", label: "Payment Failed", icon: XCircle, color: "text-rose-600", bg: "bg-rose-100", border: "border-rose-200" },
 ];
 
 interface OrderHistoryProps {
@@ -192,52 +194,56 @@ console.log("ACTUAL DB DATA:", ordersData);
                 </div>
 
                 <div className="p-6">
-                  {/* Timeline */}
-                  <div className="mb-8 overflow-x-auto pb-4 np-hide-scroll">
-                    <div className="flex items-center min-w-[500px]">
-                      {timelineSteps.map((step, index) => {
-                        const isCompleted = index < activeIndex;
-                        const isCurrent = index === activeIndex;
-                        return (
-                          <React.Fragment key={step.id}>
-                            <div className="flex flex-col items-center relative z-10 w-24">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-colors shadow-sm ${
-                                isCompleted ? 'bg-emerald-500 text-white' : 
-                                isCurrent ? 'bg-indigo-600 text-white ring-4 ring-indigo-100' : 
-                                'bg-slate-100 text-slate-400 border border-slate-200'
-                              }`}>
-                                {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : index + 1}
-                              </div>
-                              <span className={`text-[10px] font-black uppercase tracking-wider mt-2 text-center leading-tight ${
-                                isCompleted || isCurrent ? 'text-slate-900' : 'text-slate-400'
-                              }`}>
-                                {step.label}
-                              </span>
-                            </div>
-                            {index < timelineSteps.length - 1 && (
-                              <div className="flex-1 h-1.5 -ml-4 -mr-4 rounded-full relative z-0">
-                                <div className={`absolute inset-0 rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-slate-100'}`}></div>
-                              </div>
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  {order.status !== 'failed' && order.status !== 'cancelled' && (
+                    <>
+                      {/* Timeline */}
+                      <div className="mb-8 overflow-x-auto pb-4 np-hide-scroll">
+                        <div className="flex items-center min-w-[500px]">
+                          {timelineSteps.map((step, index) => {
+                            const isCompleted = index < activeIndex;
+                            const isCurrent = index === activeIndex;
+                            return (
+                              <React.Fragment key={step.id}>
+                                <div className="flex flex-col items-center relative z-10 w-24">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-colors shadow-sm ${
+                                    isCompleted ? 'bg-emerald-500 text-white' : 
+                                    isCurrent ? 'bg-indigo-600 text-white ring-4 ring-indigo-100' : 
+                                    'bg-slate-100 text-slate-400 border border-slate-200'
+                                  }`}>
+                                    {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : index + 1}
+                                  </div>
+                                  <span className={`text-[10px] font-black uppercase tracking-wider mt-2 text-center leading-tight ${
+                                    isCompleted || isCurrent ? 'text-slate-900' : 'text-slate-400'
+                                  }`}>
+                                    {step.label}
+                                  </span>
+                                </div>
+                                {index < timelineSteps.length - 1 && (
+                                  <div className="flex-1 h-1.5 -ml-4 -mr-4 rounded-full relative z-0">
+                                    <div className={`absolute inset-0 rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-slate-100'}`}></div>
+                                  </div>
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
+                        </div>
+                      </div>
 
-                  {order.profiles && (
-                    <div className="mb-6 flex items-center gap-3 bg-cyan-50/50 border border-cyan-100 p-4 rounded-2xl w-full">
-                      <div className="w-12 h-12 bg-cyan-100 text-cyan-600 rounded-full flex items-center justify-center shrink-0">
-                        <UserCheck className="w-6 h-6" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-[10px] font-bold text-cyan-600 uppercase tracking-wider mb-0.5">Delivery Agent</div>
-                        <div className="text-sm font-black text-slate-800">{order.profiles.full_name || "Assigned Driver"}</div>
-                      </div>
-                      <a href={`tel:${order.profiles.phone}`} className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-xs font-bold text-cyan-700 hover:bg-cyan-100 transition-colors shadow-sm border border-cyan-200">
-                        <PhoneCall className="w-3.5 h-3.5" /> Call Agent
-                      </a>
-                    </div>
+                      {order.profiles && (
+                        <div className="mb-6 flex items-center gap-3 bg-cyan-50/50 border border-cyan-100 p-4 rounded-2xl w-full">
+                          <div className="w-12 h-12 bg-cyan-100 text-cyan-600 rounded-full flex items-center justify-center shrink-0">
+                            <UserCheck className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-[10px] font-bold text-cyan-600 uppercase tracking-wider mb-0.5">Delivery Agent</div>
+                            <div className="text-sm font-black text-slate-800">{order.profiles.full_name || "Assigned Driver"}</div>
+                          </div>
+                          <a href={`tel:${order.profiles.phone}`} className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-xs font-bold text-cyan-700 hover:bg-cyan-100 transition-colors shadow-sm border border-cyan-200">
+                            <PhoneCall className="w-3.5 h-3.5" /> Call Agent
+                          </a>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -315,7 +321,7 @@ console.log("ACTUAL DB DATA:", ordersData);
                     </div>
                   </div>
 
-                  {!isDelivered && (
+                  {!isDelivered && order.status !== 'failed' && order.status !== 'cancelled' && (
                     <div className="mt-6 p-5 sm:p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
                       
                       {order.delivery_otp ? (
