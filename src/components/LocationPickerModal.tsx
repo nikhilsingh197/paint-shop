@@ -48,7 +48,9 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
       phone: newAddress.phone!,
       streetAddress: newAddress.streetAddress!,
       area: newAddress.area!,
-      landmark: newAddress.landmark || ""
+      landmark: newAddress.landmark || "",
+      latitude: newAddress.latitude,
+      longitude: newAddress.longitude
     };
 
     const updatedAddresses = [addressToSave, ...savedAddresses];
@@ -64,31 +66,15 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
       return;
     }
     navigator.geolocation.getCurrentPosition((position) => {
-      if (!user) {
-        alert("Please sign in to save your current location.");
-        return;
-      }
-      setNewAddress({...newAddress, latitude: position.coords.latitude, longitude: position.coords.longitude});
-      setIsAddingNew(true);
+      setNewAddress({
+        ...newAddress, 
+        latitude: position.coords.latitude, 
+        longitude: position.coords.longitude
+      });
+      alert("GPS Coordinates attached successfully! Delivery partner will use this for exact routing.");
     }, (error) => {
-      alert("Unable to retrieve location. Please grant permission or add manually.");
-      if (user) setIsAddingNew(true);
+      alert("Unable to retrieve location. Please grant location permissions in your browser/app settings.");
     });
-  };
-
-  const handleRequestAddress = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Nikhil Paints Delivery Address',
-          text: 'Hey! Please send me your complete delivery address (House No, Area, Landmark) for the paint order.',
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      alert("Share feature is not supported. Please copy and send a message manually.");
-    }
   };
 
   const renderIcon = (type: string) => {
@@ -121,6 +107,14 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
                 <button onClick={() => setIsAddingNew(false)} className="p-1 -ml-1 text-slate-400 hover:text-slate-900"><X className="w-4 h-4" /></button>
                 Enter Address Details
               </h3>
+
+              <button 
+                onClick={handleUseCurrentLocation} 
+                className={`w-full flex items-center justify-center gap-2 py-3 mb-4 rounded-xl font-bold text-sm border transition-all active:scale-95 ${newAddress.latitude ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}`}
+              >
+                <Crosshair className={`w-4 h-4 ${newAddress.latitude ? 'text-emerald-500' : 'text-slate-400'}`} />
+                {newAddress.latitude ? "GPS Location Attached" : "Use Current Location"}
+              </button>
               
               <div className="space-y-4">
                 <div className="flex gap-2">
@@ -175,26 +169,15 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
 
               {/* Action Buttons */}
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <button onClick={handleUseCurrentLocation} className="w-full flex items-center gap-3 px-4 py-4 hover:bg-slate-50 transition-colors border-b border-slate-100 text-left">
-                  <Crosshair className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <div>
-                    <div className="text-sm font-bold text-emerald-700">Use current location</div>
-                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">Fetching GPS location...</div>
-                  </div>
-                </button>
                 <button onClick={() => {
                   if (!user) {
                     alert("Please sign in to save addresses.");
                     return;
                   }
                   setIsAddingNew(true);
-                }} className="w-full flex items-center gap-3 px-4 py-4 hover:bg-slate-50 transition-colors border-b border-slate-100 text-left">
+                }} className="w-full flex items-center gap-3 px-4 py-4 hover:bg-slate-50 transition-colors text-left">
                   <Plus className="w-5 h-5 text-emerald-600 shrink-0" />
                   <div className="text-sm font-bold text-emerald-700">Add new address</div>
-                </button>
-                <button onClick={handleRequestAddress} className="w-full flex items-center gap-3 px-4 py-4 hover:bg-slate-50 transition-colors text-left">
-                  <MessageCircle className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <div className="text-sm font-bold text-emerald-700">Request address from someone else</div>
                 </button>
               </div>
 
