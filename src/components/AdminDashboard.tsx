@@ -105,7 +105,8 @@ export default function AdminDashboard() {
     setLoadingOrders(true);
     const { data, error } = await supabase
       .from("orders")
-      .select("*, profiles!delivery_partner_id(full_name, phone)") 
+      .select("*, profiles!delivery_partner_id(full_name, phone)")
+      .neq("status", "failed")
       .order("created_at", { ascending: false });
 
     if (!error) setOrders(data || []);
