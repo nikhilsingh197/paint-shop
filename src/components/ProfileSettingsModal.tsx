@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { ArrowLeft, User, Package, Wallet, MessageCircle, MapPin, Heart, FileText, Gift, Pill, CreditCard, Share2, Info, Lock, Bell, LogOut, Coins } from "lucide-react";
+import AboutUsModal from "./AboutUsModal";
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -11,10 +12,9 @@ interface ProfileSettingsModalProps {
 
 export default function ProfileSettingsModal({ isOpen, onClose, onTabChange, onRequestLocationChange }: ProfileSettingsModalProps) {
   const { user, profile, signOut } = useAuth();
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   
   if (!isOpen) return null;
-
-  const joinDate = user?.created_at ? new Date(user.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently joined';
 
   const handleSignOut = async () => {
     await signOut();
@@ -36,7 +36,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, onTabChange, onR
           </div>
           <h2 className="text-xl font-black text-slate-900 tracking-tight">{profile?.full_name || user?.email?.split('@')[0] || 'User'}</h2>
           <div className="text-[11px] font-bold text-slate-600 mt-1.5 flex items-center gap-1.5 opacity-80">
-            {profile?.phone || 'Add phone number'} <span className="w-1 h-1 bg-slate-400 rounded-full inline-block" /> {joinDate}
+            {profile?.phone || 'Add phone number'}
           </div>
         </div>
 
@@ -84,18 +84,10 @@ export default function ProfileSettingsModal({ isOpen, onClose, onTabChange, onR
             <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
           </button>
           
-          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
+          <button onClick={() => setIsAboutOpen(true)} className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
             <div className="flex items-center gap-3">
               <Info className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
               <span className="text-sm font-bold text-slate-700">About us</span>
-            </div>
-            <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
-          </button>
-
-          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <Lock className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
-              <span className="text-sm font-bold text-slate-700">Account privacy</span>
             </div>
             <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
           </button>
@@ -115,6 +107,8 @@ export default function ProfileSettingsModal({ isOpen, onClose, onTabChange, onR
         </div>
         
       </div>
+
+      <AboutUsModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </div>
   );
 }
