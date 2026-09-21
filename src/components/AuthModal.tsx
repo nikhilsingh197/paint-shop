@@ -1,9 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Mail, Lock, ArrowRight, Sparkles, Smartphone, KeyRound } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { Capacitor } from '@capacitor/core';
+import { useAuth } from "../context/AuthContext";
 
 export default function AuthModal({ onClose }: { onClose: () => void }) {
+  const { user } = useAuth();
+  
+  useEffect(() => {
+    if (user) {
+      onClose();
+    }
+  }, [user, onClose]);
+
   const [isLogin, setIsLogin] = useState(true);
   const [authMethod, setAuthMethod] = useState<"phone" | "email">("phone");
   const [email, setEmail] = useState("");
