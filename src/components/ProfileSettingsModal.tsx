@@ -1,202 +1,156 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useAuth } from "../context/AuthContext";
-import { JAMSHEDPUR_AREAS } from "../data/paintDatabase";
-import { X, MapPin, User, Phone, CheckCircle2, Home, Crosshair, Navigation } from "lucide-react";
+import { ArrowLeft, User, Package, Wallet, MessageCircle, MapPin, Heart, FileText, Gift, Pill, CreditCard, Share2, Info, Lock, Bell, LogOut, Coins } from "lucide-react";
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onTabChange?: (tab: string) => void;
+  onRequestLocationChange?: () => void;
 }
 
-export default function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalProps) {
-  const { profile, updateProfile } = useAuth();
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
+export default function ProfileSettingsModal({ isOpen, onClose, onTabChange, onRequestLocationChange }: ProfileSettingsModalProps) {
+  const { user, profile, signOut } = useAuth();
   
-  // Geolocation States
-  const [gettingLocation, setGettingLocation] = useState(false);
-  const [locationSuccess, setLocationSuccess] = useState(false);
-
-  const [formData, setFormData] = useState({
-    full_name: "",
-    phone: "",
-    street_address: "",
-    area: "Mango",
-    landmark: "",
-    latitude: null as number | null,
-    longitude: null as number | null,
-  });
-
-  // Auto-fill form
-  useEffect(() => {
-    if (isOpen && profile) {
-      setFormData({
-        full_name: profile.full_name || "",
-        phone: profile.phone || "",
-        street_address: profile.street_address || "",
-        area: profile.area || "Mango",
-        landmark: profile.landmark || "",
-        latitude: profile.latitude || null,
-        longitude: profile.longitude || null,
-      });
-      setSuccess(false);
-      setLocationSuccess(false);
-    }
-  }, [isOpen, profile]);
-
   if (!isOpen) return null;
 
-  // --- HTML5 Geolocation Pinpoint Logic ---
-  const handleGetLocation = () => {
-    setGettingLocation(true);
-    
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setFormData({
-            ...formData,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-          setGettingLocation(false);
-          setLocationSuccess(true);
-          
-          // Hide success message after 3 seconds
-          setTimeout(() => setLocationSuccess(false), 3000);
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          alert("Could not detect your exact location. Please ensure location permissions are enabled in your browser.");
-          setGettingLocation(false);
-        },
-        { enableHighAccuracy: true, timeout: 10000 } // Ask for highly accurate GPS
-      );
-    } else {
-      alert("Geolocation is not supported by your device/browser.");
-      setGettingLocation(false);
-    }
-  };
+  const joinDate = user?.created_at ? new Date(user.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently joined';
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    await updateProfile(formData);
-    setSaving(false);
-    setSuccess(true);
-    setTimeout(() => {
-      setSuccess(false);
-      onClose();
-    }, 2000);
+  const handleSignOut = async () => {
+    await signOut();
+    onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex justify-center items-center p-4">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+    <div className="fixed inset-0 z-[60] bg-[#f8f9fa] overflow-y-auto animate-in slide-in-from-right-full duration-300 pb-10">
       
-      <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+      {/* Header Section */}
+      <div className="relative bg-gradient-to-b from-[#fcd34d] via-[#fcd34d]/60 to-[#f8f9fa] pt-4 pb-6 px-4">
+        <button onClick={onClose} className="absolute top-4 left-4 p-2.5 bg-white rounded-full shadow-sm active:scale-95 transition-transform">
+          <ArrowLeft className="w-5 h-5 text-slate-800" />
+        </button>
         
-        <div className="sticky top-0 z-10 px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
-              <User className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-black text-slate-900 leading-tight">My Profile</h2>
-              <p className="text-xs text-slate-500 font-medium">Save details for faster checkout</p>
-            </div>
+        <div className="flex flex-col items-center mt-10">
+          <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg shadow-amber-500/10 mb-4 overflow-hidden border-4 border-white">
+            <User className="w-12 h-12 text-slate-800" />
           </div>
-          <button onClick={onClose} className="p-2 bg-slate-200 hover:bg-slate-300 rounded-full text-slate-600 transition-colors cursor-pointer">
-            <X className="w-4 h-4" />
+          <h2 className="text-xl font-black text-slate-900 tracking-tight">{profile?.full_name || user?.email?.split('@')[0] || 'User'}</h2>
+          <div className="text-[11px] font-bold text-slate-600 mt-1.5 flex items-center gap-1.5 opacity-80">
+            {profile?.phone || 'Add phone number'} <span className="w-1 h-1 bg-slate-400 rounded-full inline-block" /> {joinDate}
+          </div>
+        </div>
+
+        {/* Top 3 Quick Links */}
+        <div className="grid grid-cols-3 gap-3 mt-8">
+          <button onClick={() => { if(onTabChange) onTabChange("history"); onClose(); }} className="bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform">
+            <div className="bg-amber-50 p-2.5 rounded-full text-amber-600"><Package className="w-5 h-5" /></div>
+            <span className="text-[10px] font-extrabold text-slate-800 text-center">Your orders</span>
+          </button>
+          <button className="bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform">
+            <div className="bg-emerald-50 p-2.5 rounded-full text-emerald-600"><Coins className="w-5 h-5" /></div>
+            <span className="text-[10px] font-extrabold text-slate-800 text-center">Rang Coins</span>
+          </button>
+          <button className="bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform">
+            <div className="bg-blue-50 p-2.5 rounded-full text-blue-600"><MessageCircle className="w-5 h-5" /></div>
+            <span className="text-[10px] font-extrabold text-slate-800 text-center">Need help?</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="px-4 space-y-4 -mt-2 relative z-10">
+        
+        {/* Your Information */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+          <h3 className="text-xs font-black text-slate-800 px-4 py-4 bg-white border-b border-slate-50">Your information</h3>
+          
+          <button onClick={() => { if(onRequestLocationChange) onRequestLocationChange(); onClose(); }} className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <MapPin className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
+              <span className="text-sm font-bold text-slate-700">Address book</span>
+            </div>
+            <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
+          </button>
+          
+          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <Heart className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
+              <span className="text-sm font-bold text-slate-700">Your wishlist</span>
+            </div>
+            <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
+          </button>
+          
+          <button className="w-full flex items-center justify-between px-4 py-4 active:bg-slate-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <FileText className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
+              <span className="text-sm font-bold text-slate-700">GST details</span>
+            </div>
+            <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        {/* Payment and coupons */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+          <h3 className="text-xs font-black text-slate-800 px-4 py-4 bg-white border-b border-slate-50">Payment and coupons</h3>
           
-          {success && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-emerald-700 text-sm font-bold animate-in fade-in slide-in-from-top-2">
-              <CheckCircle2 className="w-5 h-5" /> Profile successfully updated!
+          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <Wallet className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
+              <span className="text-sm font-bold text-slate-700">Payment settings</span>
             </div>
-          )}
-
-          {/* Personal Info */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Personal Details</label>
-            <div className="relative">
-              <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input type="text" placeholder="Full Name" value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all" required />
-            </div>
-            <div className="relative pt-2">
-              <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input type="tel" placeholder="Phone Number (e.g. +91 98765...)" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all" required />
-            </div>
-          </div>
-
-          {/* Address & GPS */}
-          <div className="space-y-1 pt-2 border-t border-slate-100">
-            <div className="flex justify-between items-center mb-1">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Default Delivery Address</label>
-            </div>
-            
-            {/* GPS PINPOINT BUTTON */}
-            <div className="pb-2">
-              <button
-                type="button"
-                onClick={handleGetLocation}
-                disabled={gettingLocation}
-                className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm border cursor-pointer ${
-                  formData.latitude && formData.longitude 
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" 
-                    : "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
-                } disabled:opacity-70 disabled:cursor-not-allowed`}
-              >
-                {gettingLocation ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-indigo-500/30 border-t-indigo-600 rounded-full animate-spin" />
-                    Finding GPS Satellites...
-                  </>
-                ) : formData.latitude && formData.longitude ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    GPS Pinpoint Locked Successfully
-                  </>
-                ) : (
-                  <>
-                    <Crosshair className="w-4 h-4" />
-                    Detect My Exact GPS Location
-                  </>
-                )}
-              </button>
-              
-              {locationSuccess && (
-                <p className="text-[10px] text-emerald-600 font-bold text-center mt-1.5 animate-in fade-in">
-                  Coordinates saved: {formData.latitude?.toFixed(4)}, {formData.longitude?.toFixed(4)}
-                </p>
-              )}
-            </div>
-
-            <div className="relative">
-              <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <select value={formData.area} onChange={e => setFormData({...formData, area: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all appearance-none cursor-pointer">
-                {JAMSHEDPUR_AREAS.map(area => (
-                  <option key={area} value={area}>{area}</option>
-                ))}
-              </select>
-            </div>
-            <div className="relative pt-2">
-              <Home className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input type="text" placeholder="House No. / Flat / Full Street Address" value={formData.street_address} onChange={e => setFormData({...formData, street_address: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all" required />
-            </div>
-            <div className="relative pt-2">
-              <Navigation className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input type="text" placeholder="Nearby Landmark (Optional)" value={formData.landmark} onChange={e => setFormData({...formData, landmark: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all" />
-            </div>
-          </div>
-
-          <button type="submit" disabled={saving} className="w-full mt-4 bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl text-sm font-bold shadow-lg shadow-slate-900/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed">
-            {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Save Profile Details"}
+            <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
           </button>
-        </form>
+          
+          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <Gift className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
+              <span className="text-sm font-bold text-slate-700">Claim Gift card</span>
+            </div>
+            <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
+          </button>
+        </div>
 
+        {/* Other Information */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+          <h3 className="text-xs font-black text-slate-800 px-4 py-4 bg-white border-b border-slate-50">Other Information</h3>
+          
+          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <Share2 className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
+              <span className="text-sm font-bold text-slate-700">Share the app</span>
+            </div>
+            <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
+          </button>
+          
+          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <Info className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
+              <span className="text-sm font-bold text-slate-700">About us</span>
+            </div>
+            <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
+          </button>
+
+          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-slate-50 active:bg-slate-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <Lock className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
+              <span className="text-sm font-bold text-slate-700">Account privacy</span>
+            </div>
+            <ArrowLeft className="w-4 h-4 text-slate-300 rotate-180" />
+          </button>
+          
+          <button onClick={handleSignOut} className="w-full flex items-center justify-between px-4 py-4 active:bg-slate-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <LogOut className="w-5 h-5 text-rose-500" strokeWidth={1.5} />
+              <span className="text-sm font-bold text-rose-600">Log out</span>
+            </div>
+            <ArrowLeft className="w-4 h-4 text-rose-300 rotate-180" />
+          </button>
+        </div>
+        
+        <div className="text-center py-6">
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Paint Shop</div>
+          <div className="text-[9px] font-bold text-slate-300 mt-1">v1.0.0</div>
+        </div>
+        
       </div>
     </div>
   );
