@@ -58,6 +58,39 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
     onClose();
   };
 
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your device.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition((position) => {
+      if (!user) {
+        alert("Please sign in to save your current location.");
+        return;
+      }
+      setNewAddress({...newAddress, latitude: position.coords.latitude, longitude: position.coords.longitude});
+      setIsAddingNew(true);
+    }, (error) => {
+      alert("Unable to retrieve location. Please grant permission or add manually.");
+      if (user) setIsAddingNew(true);
+    });
+  };
+
+  const handleRequestAddress = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Nikhil Paints Delivery Address',
+          text: 'Hey! Please send me your complete delivery address (House No, Area, Landmark) for the paint order.',
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      alert("Share feature is not supported. Please copy and send a message manually.");
+    }
+  };
+
   const renderIcon = (type: string) => {
     switch (type) {
       case "Home": return <Home className="w-5 h-5 text-emerald-600" />;
@@ -142,7 +175,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
 
               {/* Action Buttons */}
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <button className="w-full flex items-center gap-3 px-4 py-4 hover:bg-slate-50 transition-colors border-b border-slate-100 text-left">
+                <button onClick={handleUseCurrentLocation} className="w-full flex items-center gap-3 px-4 py-4 hover:bg-slate-50 transition-colors border-b border-slate-100 text-left">
                   <Crosshair className="w-5 h-5 text-emerald-600 shrink-0" />
                   <div>
                     <div className="text-sm font-bold text-emerald-700">Use current location</div>
@@ -159,7 +192,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
                   <Plus className="w-5 h-5 text-emerald-600 shrink-0" />
                   <div className="text-sm font-bold text-emerald-700">Add new address</div>
                 </button>
-                <button className="w-full flex items-center gap-3 px-4 py-4 hover:bg-slate-50 transition-colors text-left">
+                <button onClick={handleRequestAddress} className="w-full flex items-center gap-3 px-4 py-4 hover:bg-slate-50 transition-colors text-left">
                   <MessageCircle className="w-5 h-5 text-emerald-600 shrink-0" />
                   <div className="text-sm font-bold text-emerald-700">Request address from someone else</div>
                 </button>
