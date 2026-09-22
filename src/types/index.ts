@@ -51,6 +51,7 @@ export interface ProductItem {
   finish: FinishType;
   washability: 'Low' | 'Medium' | 'High' | 'Best-in-Class (10,000+ scrubs)';
   image: string;
+  additional_images?: string[];
   packs: PackOption[];
   requiresShade: boolean;
   defaultShadeCode?: string;

@@ -48,12 +48,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   }, [currentShade]);
 
   // Parse gallery images safely
-  let imagesList = (product as any).galleryImages || (product as any).gallery_images;
-  if (typeof imagesList === 'string') {
-    try { imagesList = JSON.parse(imagesList); } catch (e) { imagesList = []; }
+  let rawAdditional = product.additional_images || (product as any).galleryImages || (product as any).gallery_images;
+  if (typeof rawAdditional === 'string') {
+    try { rawAdditional = JSON.parse(rawAdditional); } catch (e) { rawAdditional = []; }
   }
-  if (!imagesList || imagesList.length === 0) {
-    imagesList = [product.image || "https://placehold.co/600"];
+  let imagesList = [product.image || "https://placehold.co/600"];
+  if (Array.isArray(rawAdditional) && rawAdditional.length > 0) {
+    imagesList = [...imagesList, ...rawAdditional];
   }
 
   const baseTintCharge = selectedShade ? (selectedShade.tinting_charge || 0) : 0;
