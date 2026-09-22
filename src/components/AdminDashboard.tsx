@@ -256,18 +256,23 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!editingProduct) return;
     setSavingProduct(true);
-    const { error } = await supabase.from("products").upsert({
-      id: editingProduct.id, name: editingProduct.name, brand: editingProduct.brand, category: editingProduct.category, tagline: editingProduct.tagline || "",
-      finish: editingProduct.finish || "Matt", image: editingProduct.image || "", requiresShade: editingProduct.requiresShade ?? true,
-      additional_images: (editingProduct.additional_images || []).map((url: string) => url.trim()).filter(Boolean),
-      hsn_code: editingProduct.hsn_code || "3208",
-      is_active: editingProduct.is_active ?? true, in_stock: editingProduct.in_stock ?? true, rating: editingProduct.rating || 4.5, reviewsCount: editingProduct.reviewsCount || 0,
-      deliveryMinutes: editingProduct.deliveryMinutes || 35, coveragePerLiter: editingProduct.coveragePerLiter || "", washability: editingProduct.washability || "Medium",
-      features: typeof editingProduct.features === 'string' ? editingProduct.features : JSON.stringify(editingProduct.features || []),
-      packs: editingProduct.packs || []
-    });
-    if (!error) { setEditingProduct(null); fetchProducts(); }
-    setSavingProduct(false);
+      const { error } = await supabase.from("products").upsert({
+        id: editingProduct.id, name: editingProduct.name, brand: editingProduct.brand, category: editingProduct.category, tagline: editingProduct.tagline || "",
+        finish: editingProduct.finish || "Matt", image: editingProduct.image || "", requiresShade: editingProduct.requiresShade ?? true,
+        additional_images: (editingProduct.additional_images || []).map((url: string) => url.trim()).filter(Boolean),
+        hsn_code: editingProduct.hsn_code || "3208",
+        is_active: editingProduct.is_active ?? true, in_stock: editingProduct.in_stock ?? true, rating: editingProduct.rating || 4.5, reviewsCount: editingProduct.reviewsCount || 0,
+        deliveryMinutes: editingProduct.deliveryMinutes || 35, coveragePerLiter: editingProduct.coveragePerLiter || "", washability: editingProduct.washability || "Medium",
+        features: typeof editingProduct.features === 'string' ? editingProduct.features : JSON.stringify(editingProduct.features || []),
+        packs: editingProduct.packs || []
+      });
+      if (error) {
+        alert("Failed to save product: " + error.message + "\n\nDid you forget to run the SQL migration to add the 'additional_images' column?");
+      } else {
+        setEditingProduct(null); 
+        fetchProducts(); 
+      }
+      setSavingProduct(false);
   };
 
   const toggleProductStatus = async (id: string, currentStatus: boolean) => {
