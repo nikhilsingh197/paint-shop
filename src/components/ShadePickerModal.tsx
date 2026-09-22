@@ -100,7 +100,6 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
   );
 
   const [roomView, setRoomView] = useState<RoomViewType>("livingRoom");
-  const [lighting, setLighting] = useState<LightingType>("daylight");
   const [customCodeInput, setCustomCodeInput] = useState("");
   const [packSize, setPackSize] = useState<PackSize>(1);
 
@@ -113,12 +112,6 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
       }
     }
   }, [isOpen, currentSelectedShade, currentShade]);
-
-  const getLightingOverlay = () => {
-    if (lighting === "warm") return "bg-orange-500/15 mix-blend-color-burn";
-    if (lighting === "cool") return "bg-blue-500/15 mix-blend-color-burn";
-    return "";
-  };
 
   const fetchShades = async (isLoadMore = false, currentPage = 0) => {
     if (isLoadMore) setIsLoadingMore(true);
@@ -342,26 +335,11 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
                     className="absolute inset-0 transition-colors duration-500 ease-in-out"
                     style={{ backgroundColor: selectedShade.hex }}
                   />
-                  {/* Lighting Overlay */}
-                  <div className={`absolute inset-0 transition-all duration-500 ${getLightingOverlay()}`} />
                   
                   {/* Subtle Wall Texture / Gradient for realism */}
                   <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-black/40 mix-blend-overlay" />
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white/25 to-transparent mix-blend-overlay" />
 
-                  {/* Lighting Controls */}
-                  <div className="absolute top-4 right-4 flex bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 p-1 z-20">
-                    <button onClick={() => setLighting('daylight')} className={`p-2.5 rounded-xl transition-all ${lighting === 'daylight' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'}`}>
-                      <Sun className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => setLighting('warm')} className={`p-2.5 rounded-xl transition-all ${lighting === 'warm' ? 'bg-white shadow-sm text-amber-500' : 'text-slate-500 hover:text-amber-500 hover:bg-white/50'}`}>
-                      <Lamp className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => setLighting('cool')} className={`p-2.5 rounded-xl transition-all ${lighting === 'cool' ? 'bg-white shadow-sm text-blue-500' : 'text-slate-500 hover:text-blue-500 hover:bg-white/50'}`}>
-                      <Moon className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
                   {/* Shade Info Card */}
                   <div className="absolute bottom-8 left-4 right-4 flex items-end justify-center z-20">
                     <div className="bg-white/95 backdrop-blur-xl px-6 py-5 rounded-3xl shadow-2xl border border-white/50 w-full max-w-sm text-center transform transition-all hover:scale-105 duration-300">
