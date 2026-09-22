@@ -25,17 +25,32 @@ interface ShadePickerModalProps {
   isDirectAddToCart?: boolean;
 }
 
-const FAMILY_MAPPING: Record<string, string[]> = {
-  "Whites & Off-Whites": ["whites", "Whites", "off whites"],
-  "Yellows & Golds": ["yellows", "Yellows"],
-  "Reds & Oranges": ["reds", "Reds", "oranges", "Oranges", "pinks"],
-  "Blues & Teals": ["blues", "Blues", "Blue-Greens"],
-  "Greens & Olives": ["greens", "Greens", "Yellow-Greens"],
-  "Purples & Violets": ["purples", "Purples"],
-  "Greys & Browns": ["greys", "browns", "Neutrals: Browns & Greys", "General"],
-};
+const COLOR_FAMILIES = [
+  { name: "All", color: "conic-gradient(from 0deg, red, yellow, lime, aqua, blue, magenta, red)" },
+  { name: "Whites", color: "#F8FAFC" },
+  { name: "Yellows", color: "#FDE047" },
+  { name: "Oranges", color: "#FB923C" },
+  { name: "Reds", color: "#EF4444" },
+  { name: "Pinks", color: "#F472B6" },
+  { name: "Purples", color: "#A855F7" },
+  { name: "Blues", color: "#3B82F6" },
+  { name: "Greens", color: "#22C55E" },
+  { name: "Browns", color: "#78350F" },
+  { name: "Greys", color: "#64748B" }
+];
 
-const COLOR_FAMILIES = ["All", ...Object.keys(FAMILY_MAPPING)];
+const FAMILY_QUERY_MAP: Record<string, string[]> = {
+  Whites: ["whites", "Whites", "off whites"],
+  Yellows: ["yellows", "Yellows"],
+  Oranges: ["oranges", "Oranges"],
+  Reds: ["reds", "Reds"],
+  Pinks: ["pinks"],
+  Purples: ["purples", "Purples"],
+  Blues: ["blues", "Blues", "Blue-Greens"],
+  Greens: ["greens", "Greens", "Yellow-Greens"],
+  Browns: ["browns", "Neutrals: Browns & Greys"],
+  Greys: ["greys", "General"]
+};
 
 type RoomViewType = "livingRoom" | "bedroom" | "accentWall" | "exterior";
 type LightingType = "daylight" | "warm" | "cool";
@@ -99,6 +114,12 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
     }
   }, [isOpen, currentSelectedShade, currentShade]);
 
+  const getLightingOverlay = () => {
+    if (lighting === "warm") return "bg-orange-500/15 mix-blend-color-burn";
+    if (lighting === "cool") return "bg-blue-500/15 mix-blend-color-burn";
+    return "";
+  };
+
   const fetchShades = async (isLoadMore = false, currentPage = 0) => {
     if (isLoadMore) setIsLoadingMore(true);
     else setIsLoading(true);
@@ -116,7 +137,7 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
       }
 
       if (activeFamily !== "All") {
-        const dbFamilies = FAMILY_MAPPING[activeFamily];
+        const dbFamilies = FAMILY_QUERY_MAP[activeFamily];
         if (dbFamilies) query = query.in("color_family", dbFamilies);
       }
 
@@ -207,21 +228,25 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
                   className="w-full bg-slate-50/50 border border-slate-200 rounded-xl pl-11 pr-4 py-2.5 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400"
                 />
               </div>
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
-                {COLOR_FAMILIES.map((family) => (
-                  <button
-                    key={family}
-                    onClick={() => setActiveFamily(family)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                      activeFamily === family
-                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  >
-                    {family}
-                  </button>
-                ))}
-              </div>
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                  {COLOR_FAMILIES.map((fam) => (
+                    <button
+                      key={fam.name}
+                      onClick={() => setActiveFamily(fam.name)}
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 border shadow-xs shrink-0 ${
+                        activeFamily === fam.name
+                          ? "bg-slate-800 text-white border-slate-800 shadow-md"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div 
+                        className="w-3 h-3 rounded-full border border-black/10 shadow-inner shrink-0" 
+                        style={{ background: fam.color }} 
+                      />
+                      {fam.name}
+                    </button>
+                  ))}
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 pb-40 np-hide-scroll">
@@ -310,25 +335,52 @@ export const ShadePickerModal: React.FC<ShadePickerModalProps> = ({
           <div className="lg:col-span-5 flex flex-col shrink-0 border-t border-slate-200 lg:border-t-0 bg-white z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] lg:shadow-none overflow-y-auto max-h-[55vh] lg:max-h-full">
             <div className="flex flex-col h-full lg:p-5 lg:pl-2">
               <div className="bg-white lg:rounded-3xl lg:border border-slate-200 lg:shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden h-full">
-              {/* Preview Area */}
-              <div className="relative w-full h-64 shrink-0 bg-slate-100">
-                <div
-                  className="absolute inset-0 transition-colors duration-500 ease-in-out"
-                  style={{ backgroundColor: selectedShade.hex }}
-                />
-                {/* Clean solid color representation (No dusty textures) */}
                 
-                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-                  <div className="bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-lg border border-white/50">
-                    <h2 className="text-xl font-black text-slate-900 tracking-tight">{selectedShade.name}</h2>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-sm font-bold text-slate-500 font-mono">{selectedShade.code}</span>
-                      <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">HEX {selectedShade.hex}</span>
+                {/* Preview Area */}
+                <div className="relative w-full flex-1 min-h-[350px] lg:min-h-[500px] shrink-0 bg-slate-100 overflow-hidden">
+                  <div
+                    className="absolute inset-0 transition-colors duration-500 ease-in-out"
+                    style={{ backgroundColor: selectedShade.hex }}
+                  />
+                  {/* Lighting Overlay */}
+                  <div className={`absolute inset-0 transition-all duration-500 ${getLightingOverlay()}`} />
+                  
+                  {/* Subtle Wall Texture / Gradient for realism */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-black/40 mix-blend-overlay" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white/25 to-transparent mix-blend-overlay" />
+
+                  {/* Lighting Controls */}
+                  <div className="absolute top-4 right-4 flex bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 p-1 z-20">
+                    <button onClick={() => setLighting('daylight')} className={`p-2.5 rounded-xl transition-all ${lighting === 'daylight' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'}`}>
+                      <Sun className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setLighting('warm')} className={`p-2.5 rounded-xl transition-all ${lighting === 'warm' ? 'bg-white shadow-sm text-amber-500' : 'text-slate-500 hover:text-amber-500 hover:bg-white/50'}`}>
+                      <Lamp className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setLighting('cool')} className={`p-2.5 rounded-xl transition-all ${lighting === 'cool' ? 'bg-white shadow-sm text-blue-500' : 'text-slate-500 hover:text-blue-500 hover:bg-white/50'}`}>
+                      <Moon className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  {/* Shade Info Card */}
+                  <div className="absolute bottom-8 left-4 right-4 flex items-end justify-center z-20">
+                    <div className="bg-white/95 backdrop-blur-xl px-6 py-5 rounded-3xl shadow-2xl border border-white/50 w-full max-w-sm text-center transform transition-all hover:scale-105 duration-300">
+                      <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">{selectedShade.name}</h2>
+                      <div className="flex items-center justify-center gap-3">
+                        <span className="text-sm font-bold text-slate-500 font-mono">{selectedShade.code}</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                        <span className="text-[11px] font-black uppercase tracking-widest text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full shadow-inner flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedShade.hex }} />
+                          {selectedShade.hex}
+                        </span>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        <span className="text-xs font-bold text-slate-600">{selectedShade.brand}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
               </div>
             </div>
