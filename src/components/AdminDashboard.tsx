@@ -259,7 +259,7 @@ export default function AdminDashboard() {
     const { error } = await supabase.from("products").upsert({
       id: editingProduct.id, name: editingProduct.name, brand: editingProduct.brand, category: editingProduct.category, tagline: editingProduct.tagline || "",
       finish: editingProduct.finish || "Matt", image: editingProduct.image || "", requiresShade: editingProduct.requiresShade ?? true,
-      additional_images: editingProduct.additional_images || [],
+      additional_images: (editingProduct.additional_images || []).map((url: string) => url.trim()).filter(Boolean),
       hsn_code: editingProduct.hsn_code || "3208",
       is_active: editingProduct.is_active ?? true, in_stock: editingProduct.in_stock ?? true, rating: editingProduct.rating || 4.5, reviewsCount: editingProduct.reviewsCount || 0,
       deliveryMinutes: editingProduct.deliveryMinutes || 35, coveragePerLiter: editingProduct.coveragePerLiter || "", washability: editingProduct.washability || "Medium",
@@ -765,12 +765,12 @@ export default function AdminDashboard() {
                     <input type="url" value={editingProduct.image} onChange={e => setEditingProduct({...editingProduct, image: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 bg-slate-50" />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Additional Image URLs (comma-separated)</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Additional Image URLs (one per line)</label>
                     <textarea 
-                      value={editingProduct.additional_images?.join(',\n') || ''} 
-                      onChange={e => setEditingProduct({...editingProduct, additional_images: e.target.value.split(',').map(url => url.trim()).filter(Boolean)})} 
-                      placeholder="https://image1.jpg,&#10;https://image2.jpg" 
-                      rows={2}
+                      value={editingProduct.additional_images?.join('\n') || ''} 
+                      onChange={e => setEditingProduct({...editingProduct, additional_images: e.target.value.split('\n')})} 
+                      placeholder="https://image1.jpg&#10;https://image2.jpg" 
+                      rows={3}
                       className="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 bg-slate-50" 
                     />
                   </div>
