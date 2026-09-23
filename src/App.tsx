@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { supabase } from "./supabaseClient";
 import confetti from "canvas-confetti";
 import { fetchProducts } from "./lib/productApi";
+import { Analytics } from "@vercel/analytics/react";
 import AdminDashboard from "./components/AdminDashboard";
 import { useAuth } from "./context/AuthContext";
 import { useToast } from "./components/Toast";
@@ -973,6 +974,7 @@ export default function App() {
         isChatOpen={isChatOpen}
         unreadNotificationsCount={alerts.filter((a) => !a.read).length}
       />
+      <Analytics />
       </div>
     </div>
   );
