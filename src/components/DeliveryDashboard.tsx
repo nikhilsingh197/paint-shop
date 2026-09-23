@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { Truck, Navigation, CheckCircle2, Package, MapPin, Phone, User, ShieldCheck, KeyRound } from "lucide-react";
+import { useToast } from "./Toast";
 
 export default function DeliveryDashboard() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [assignedOrders, setAssignedOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [otpInputs, setOtpInputs] = useState<{ [key: string]: string }>({});
@@ -33,27 +35,26 @@ export default function DeliveryDashboard() {
   const handleVerifyOtp = async (orderId: string, correctOtp: string) => {
     const enteredOtp = otpInputs[orderId]?.trim();
     if (!enteredOtp) {
-      alert("Please enter the 4-digit delivery OTP provided by the customer.");
+      showToast("Please enter the 4-digit delivery OTP provided by the customer.", "warning");
       return;
     }
 
     if (enteredOtp !== correctOtp) {
-      alert("Incorrect OTP! Please ask the customer for the correct 4-digit code.");
+      showToast("Incorrect OTP! Please ask the customer for the correct 4-digit code.", "error");
       return;
     }
 
     setVerifyingId(orderId);
 
-    // Update order status to delivered in Supabase
     const { error } = await supabase
       .from("orders")
       .update({ status: "delivered" })
       .eq("id", orderId);
 
     if (error) {
-      alert("Failed to complete delivery: " + error.message);
+      showToast("Failed to complete delivery: " + error.message, "error");
     } else {
-      alert("🎉 Delivery successfully completed!");
+      showToast("🎉 Delivery successfully completed!", "success");
       fetchAssignedOrders();
     }
     setVerifyingId(null);

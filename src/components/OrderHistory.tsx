@@ -7,7 +7,8 @@ import {
   MapPin, KeyRound, Navigation, FileText, CreditCard,
   XCircle
 } from "lucide-react";
-import { InvoiceModal } from "./InvoiceModal"; 
+import { InvoiceModal } from "./InvoiceModal";
+import { useToast } from "./Toast";
 
 // --- BULLETPROOF DATA HELPERS ---
 const getSafeId = (order: any) => {
@@ -45,6 +46,7 @@ interface OrderHistoryProps {
 }
 
 export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders = [], onReorder, onTrackOrder }) => {
+  const { showToast } = useToast();
   const { user } = useAuth();
   
   // We ONLY use this state now. No fallbacks to local dummy data.
@@ -352,7 +354,7 @@ console.log("ACTUAL DB DATA:", ordersData);
                           if (onTrackOrder) {
                             onTrackOrder(order);
                           } else {
-                            alert("Live tracking component is still loading...");
+                            showToast("Live tracking is still loading. Please try again.", "info");
                           }
                         }}
                         className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-4 rounded-2xl text-xs font-black shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-xl transition-all cursor-pointer w-full md:w-auto hover:-translate-y-0.5"

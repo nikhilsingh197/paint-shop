@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, Search, MapPin, Plus, Home, Briefcase, Map, Crosshair, ExternalLink, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import { useAuth, SavedAddress } from "../context/AuthContext";
 import { v4 as uuidv4 } from "uuid";
+import { useToast } from "./Toast";
 
 interface LocationPickerModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
   isOpen, onClose, currentSelection, onSelect
 }) => {
   const { user, profile, updateProfile } = useAuth();
+  const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
 
   const handleSaveNewAddress = async () => {
     if (!newAddress.fullName || !newAddress.phone || !newAddress.streetAddress) {
-      alert("Please fill in required fields.");
+      showToast("Please fill in required fields.", "warning");
       return;
     }
     const addressToSave: SavedAddress = {
@@ -70,7 +72,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
 
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your device.");
+      showToast("Geolocation is not supported by your device.", "warning");
       return;
     }
     navigator.geolocation.getCurrentPosition((position) => {
@@ -79,9 +81,9 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
         latitude: position.coords.latitude, 
         longitude: position.coords.longitude
       });
-      alert("GPS Coordinates attached successfully! Delivery partner will use this for exact routing.");
+      showToast("GPS coordinates attached! Delivery partner will use this for exact routing.", "success");
     }, (error) => {
-      alert("Unable to retrieve location. Please grant location permissions in your browser/app settings.");
+      showToast("Unable to retrieve location. Please grant location permissions in your browser/app settings.", "warning");
     });
   };
 
@@ -187,7 +189,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                 <button onClick={() => {
                   if (!user) {
-                    alert("Please sign in to save addresses.");
+                    showToast("Please sign in to save addresses.", "warning");
                     return;
                   }
                   setIsAddingNew(true);

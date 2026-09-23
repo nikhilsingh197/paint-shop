@@ -140,7 +140,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .single();
     if (error) {
       console.error("Failed to update profile:", error);
-      alert("Failed to save changes: " + error.message);
+      // Note: AuthContext is above ToastProvider in the tree.
+      // Callers (ProfileSettingsModal etc.) should display their own error UI.
     }
     if (data) setProfile(data);
   };

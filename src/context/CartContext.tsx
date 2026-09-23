@@ -66,7 +66,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const checkout = async () => {
     if (!user) {
-      alert("Please log in to place an order.");
+      // CartContext is above Toast in tree; callers should check auth before calling checkout
+      console.warn("checkout() called without a logged-in user");
       return;
     }
     if (cartItems.length === 0) return;
@@ -89,11 +90,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      alert("Order placed successfully!");
+      console.log("CartContext checkout: order placed successfully."); // main flow uses App.tsx finalizeAndSaveOrder
       clearCart();
     } catch (error: any) {
       console.error("Checkout error:", error);
-      alert("Failed to place order: " + error.message);
     } finally {
       setIsCheckingOut(false);
     }

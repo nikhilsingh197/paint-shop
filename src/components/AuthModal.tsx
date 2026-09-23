@@ -3,9 +3,11 @@ import { X, Mail, Lock, ArrowRight, Sparkles, Smartphone, KeyRound } from "lucid
 import { supabase } from "../lib/supabase";
 import { Capacitor } from '@capacitor/core';
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "./Toast";
 
 export default function AuthModal({ onClose }: { onClose: () => void }) {
   const { user } = useAuth();
+  const { showToast } = useToast();
   
   useEffect(() => {
     if (user) {
@@ -62,7 +64,7 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
       } else {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        alert("Check your email for the confirmation link!");
+        showToast("Check your email for the confirmation link!", "success");
       }
       onClose();
     } catch (err: any) {

@@ -9,8 +9,8 @@ import {
   MapPin,
   CalendarCheck
 } from "lucide-react";
-
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "./Toast";
 
 interface PaintingServicesProps {
   isAdmin?: boolean;
@@ -20,6 +20,7 @@ export const PaintingServices: React.FC<PaintingServicesProps> = ({
   isAdmin = false,
 }) => {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [leads, setLeads] = useState<PaintingLead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showNewQuoteModal, setShowNewQuoteModal] = useState(false);
@@ -49,7 +50,7 @@ export const PaintingServices: React.FC<PaintingServicesProps> = ({
     if (!fullName.trim() || !phone.trim() || !address.trim() || !preferredDate) return;
     
     if (!user) {
-      alert("Please log in to submit a request.");
+      showToast("Please log in to submit a request.", "warning");
       return;
     }
 
@@ -73,7 +74,7 @@ export const PaintingServices: React.FC<PaintingServicesProps> = ({
       setPreferredDate("");
       setShowNewQuoteModal(false);
     } else {
-      alert("Failed to submit request. Please ensure the database table is correctly configured.");
+      showToast("Failed to submit request. Please check your connection.", "error");
     }
     setIsSubmitting(false);
   };

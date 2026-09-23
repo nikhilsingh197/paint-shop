@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Zap,
   MapPin,
@@ -28,6 +28,8 @@ interface HeaderProps {
   notifications: AppNotification[];
   onOpenNotifications: () => void;
   onOpenConsultantChat: () => void;
+  /** debounce ms for search (default 300) */
+  searchDebounceMs?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -43,20 +45,58 @@ export const Header: React.FC<HeaderProps> = ({
   notifications,
   onOpenNotifications,
   onOpenConsultantChat,
+  searchDebounceMs = 300,
 }) => {
   const [showAreaDropdown, setShowAreaDropdown] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  // Local value for the input — debounced before calling parent
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { user, profile, signOut } = useAuth();
 
-  const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
-  const totalCartPrice = cartItems.reduce(
-    (acc, item) => acc + item.pack.price * item.quantity + item.tintingCharge * item.quantity,
-    0
+  // Memoize heavy cart calculations so scroll re-renders are cheap
+  const totalCartCount = useMemo(
+    () => cartItems.reduce((acc, item) => acc + item.quantity, 0),
+    [cartItems]
   );
-  const unreadNotifsCount = notifications.filter((n) => !n.read).length;
+  const totalCartPrice = useMemo(
+    () => cartItems.reduce(
+      (acc, item) => acc + item.pack.price * item.quantity + item.tintingCharge * item.quantity,
+      0
+    ),
+    [cartItems]
+  );
+  const unreadNotifsCount = useMemo(
+    () => notifications.filter((n) => !n.read).length,
+    [notifications]
+  );
+
+  // Debounced search handler
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setLocalSearch(value);
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      debounceTimer.current = setTimeout(() => {
+        onSearchChange(value);
+      }, searchDebounceMs);
+    },
+    [onSearchChange, searchDebounceMs]
+  );
+
+  // Sync local value if parent resets it (e.g. clear button)
+  useEffect(() => {
+    setLocalSearch(searchQuery);
+  }, [searchQuery]);
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -102,14 +142,14 @@ export const Header: React.FC<HeaderProps> = ({
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 group-focus-within:text-amber-500 transition-colors" />
                 <input
                   type="text"
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
+                  value={localSearch}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Search 'Primer', 'Asian Paints', or 'BO-7821'..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-sm"
                 />
-                {searchQuery && (
+                {localSearch && (
                   <button
-                    onClick={() => onSearchChange("")}
+                    onClick={() => { handleSearchChange(""); onSearchChange(""); }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center bg-slate-200 rounded-full text-xs text-slate-600 hover:bg-slate-300 cursor-pointer"
                   >
                     ✕
@@ -152,14 +192,14 @@ export const Header: React.FC<HeaderProps> = ({
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 group-focus-within:text-amber-500 transition-colors" />
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
+              value={localSearch}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search 'Primer', 'Asian Paints'..."
               className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-sm"
             />
-            {searchQuery && (
+            {localSearch && (
               <button
-                onClick={() => onSearchChange("")}
+                onClick={() => { handleSearchChange(""); onSearchChange(""); }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center bg-slate-200 rounded-full text-xs text-slate-600 hover:bg-slate-300 cursor-pointer"
               >
                 ✕

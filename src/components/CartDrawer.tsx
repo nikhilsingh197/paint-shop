@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { CartItem, DeliveryAddress } from "../types";
 import { JAMSHEDPUR_AREAS } from "../data/paintDatabase";
 import {
@@ -8,6 +8,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 import confetti from "canvas-confetti";
+import { useToast } from "./Toast";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   currentLocation, onRequestLocationChange, onProceedToPayment, onNavigateToOrders
 }) => {
   const { user, profile, updateProfile } = useAuth();
+  const { showToast } = useToast();
 
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "address" | "processing" | "success">("cart");
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -50,35 +52,40 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  
+  // Track last processed profile to avoid re-running autofill on every isOpen change
+  const autofillDoneRef = useRef(false);
 
-  // CHECK STORE STATUS WHEN CART OPENS
- useEffect(() => {
-    if (isOpen) {
-      const fetchStatus = async () => {
-        const { data, error } = await supabase.from('store_settings').select('is_open').eq('id', 1).single();
-        
-        // --- PRINT THE SECRET ERROR TO THE CONSOLE ---
-        console.log("🔥 STORE STATUS CHECK -> Data:", data, "Error:", error);
-        
-        // Only update if we successfully got data, and explicitly set it to false if the DB says false
-        if (data !== null) {
+  // CHECK STORE STATUS WHEN CART OPENS — with AbortController to prevent stacked calls
+  useEffect(() => {
+    if (!isOpen) return;
+    const controller = new AbortController();
+    const fetchStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('store_settings').select('is_open').eq('id', 1).single();
+        if (!controller.signal.aborted && data !== null) {
           setIsStoreOpen(data.is_open);
         }
-      };
-      fetchStatus();
-    }
+      } catch (err) {
+        // Silently ignore — store defaults to open
+      }
+    };
+    fetchStatus();
+    return () => controller.abort();
   }, [isOpen]);
 
-  // SYNC AREA WITH GLOBAL HEADER
+  // SYNC AREA WITH GLOBAL HEADER — only update area, don't fetch
   useEffect(() => {
     if (isOpen) {
       setAddress((prev) => ({ ...prev, area: typeof currentLocation === 'string' ? currentLocation : (currentLocation?.area || "Mango") }));
     }
   }, [isOpen, currentLocation]);
 
-  // AUTO-FILL SAVED ADDRESS WHEN CART OPENS
+  // AUTO-FILL SAVED ADDRESS WHEN CART OPENS — only run once per profile load
   useEffect(() => {
-    if (isOpen && profile) {
+    if (isOpen && profile && !autofillDoneRef.current) {
+      autofillDoneRef.current = true;
       if (profile.saved_addresses && profile.saved_addresses.length > 0 && !selectedAddressId) {
         setSelectedAddressId(profile.saved_addresses[0].id);
       } else if (!profile.saved_addresses || profile.saved_addresses.length === 0) {
@@ -93,9 +100,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         }));
       }
     }
+    // Reset autofill guard when cart closes so it can re-run if profile changes
+    if (!isOpen) autofillDoneRef.current = false;
   }, [isOpen, profile]);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    // Return a hidden placeholder instead of null to preserve component state
+    // (address fields, GST data, checkoutStep) across open/close cycles
+    return <div aria-hidden="true" style={{ display: 'none' }} />;
+  }
 
   // --- GPS Geolocation Logic ---
   const handleGetLocation = () => {
@@ -114,13 +127,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         },
         (error) => {
           console.error("Error getting location:", error);
-          alert("Could not detect exact location. Please ensure location permissions are enabled.");
+          showToast("Could not detect exact location. Please ensure location permissions are enabled.", "warning");
           setGettingLocation(false);
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
     } else {
-      alert("Geolocation is not supported by your browser.");
+      showToast("Geolocation is not supported by your browser.", "warning");
       setGettingLocation(false);
     }
   };
@@ -175,7 +188,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   };
 
   const handleInitiateCheckout = () => {
-    if (!user) return alert("Please login or create an account to place your order.");
+    if (!user) {
+      showToast("Please login or create an account to place your order.", "warning");
+      return;
+    }
     
     if (typeof currentLocation === 'string') {
       onRequestLocationChange();
@@ -184,8 +200,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
     const finalAddress = currentLocation;
       
-    if (!finalAddress.fullName || !finalAddress.phone || !finalAddress.streetAddress) return alert("Please fill in your complete delivery details.");
-    if (hasGst && (!gstin || !companyName)) return alert("Please fill in your Company Name and GSTIN.");
+    if (!finalAddress.fullName || !finalAddress.phone || !finalAddress.streetAddress) {
+      showToast("Please fill in your complete delivery details.", "warning");
+      return;
+    }
+    if (hasGst && (!gstin || !companyName)) {
+      showToast("Please fill in your Company Name and GSTIN.", "warning");
+      return;
+    }
 
     onProceedToPayment({
       items: cartItems,

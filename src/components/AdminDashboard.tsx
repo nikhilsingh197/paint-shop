@@ -40,9 +40,11 @@ const ORDER_STATUSES = [
 
 import { PaintingLead } from "../types";
 import { fetchPaintingLeads, assignContractorToLead } from "../lib/paintingLeadsApi";
+import { useToast } from "./Toast";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"orders" | "inventory" | "leads" | "notifications">("orders");
+  const { showToast } = useToast();
 
   // --- Notification Form State ---
   const [notifTitle, setNotifTitle] = useState("");
@@ -188,7 +190,7 @@ export default function AdminDashboard() {
       .eq("id", orderId);
 
     if (error) {
-      alert("Failed to assign partner: " + error.message);
+      showToast("Failed to assign partner: " + error.message, "error");
     } else {
       fetchOrders(); 
     }
@@ -224,12 +226,12 @@ export default function AdminDashboard() {
         type: notifType
       }]);
       if (error) throw error;
-      alert("Notification broadcasted to all users!");
+      showToast("Notification broadcasted to all users! ✅", "success");
       setNotifTitle("");
       setNotifMessage("");
     } catch (error) {
       console.error("Error sending notification:", error);
-      alert("Error sending notification. Make sure the app_notifications table is created.");
+      showToast("Error sending notification. Make sure the app_notifications table is created.", "error");
     } finally {
       setSendingNotif(false);
     }
@@ -267,7 +269,7 @@ export default function AdminDashboard() {
         packs: editingProduct.packs || []
       });
       if (error) {
-        alert("Failed to save product: " + error.message + "\n\nDid you forget to run the SQL migration to add the 'additional_images' column?");
+        showToast("Failed to save product: " + error.message, "error");
       } else {
         setEditingProduct(null); 
         fetchProducts(); 
@@ -311,7 +313,7 @@ export default function AdminDashboard() {
     if (success) {
       fetchLeads();
     } else {
-      alert("Failed to assign contractor. Ensure Supabase table 'painting_leads' has 'assigned_contractor' and 'status' columns.");
+      showToast("Failed to assign contractor. Check 'painting_leads' table columns.", "error");
     }
   };
 

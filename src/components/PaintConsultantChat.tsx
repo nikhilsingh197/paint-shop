@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { ChatMessage, ShadeItem } from "../types";
 import { supabase } from "../supabaseClient";
 import { Sparkles, Send, PhoneCall, Palette, Bot, User, X } from "lucide-react";
+import { useToast } from "./Toast";
 
 interface PaintConsultantChatProps {
   isOpen: boolean;
@@ -39,6 +40,10 @@ export const PaintConsultantChat: React.FC<PaintConsultantChatProps> = ({
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Rate limiting: enforce minimum 2s between sends
+  const lastSentAt = useRef<number>(0);
+  const RATE_LIMIT_MS = 2000;
+  const { showToast } = useToast();
 
   // Dynamically load the first message and fetch real shades from Supabase
   useEffect(() => {
@@ -71,6 +76,14 @@ export const PaintConsultantChat: React.FC<PaintConsultantChatProps> = ({
   const handleSendMessage = async (textToSend?: string) => {
     const query = textToSend || inputText;
     if ((!query.trim() && !imageContext) || isLoading) return;
+
+    // Rate limit: reject if called too quickly after last send
+    const now = Date.now();
+    if (now - lastSentAt.current < RATE_LIMIT_MS) {
+      showToast("Please wait a moment before sending another message.", "info");
+      return;
+    }
+    lastSentAt.current = now;
 
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}`,

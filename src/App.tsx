@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { supabase } from "./supabaseClient";
 import confetti from "canvas-confetti";
 import { fetchProducts } from "./lib/productApi";
 import AdminDashboard from "./components/AdminDashboard";
 import { useAuth } from "./context/AuthContext";
+import { useToast } from "./components/Toast";
 import {
   ProductItem,
   PackOption,
@@ -56,6 +57,7 @@ const ADMIN_EMAIL = "singhrajputn197@gmail.com";
 
 export default function App() {
   const { user, profile } = useAuth();
+  const { showToast } = useToast();
   const isAdmin = user?.email === ADMIN_EMAIL;
   const isDelivery = profile?.role === "delivery";
 
@@ -73,12 +75,20 @@ export default function App() {
 
   const [activeProduct, setActiveProduct] = useState<ProductItem | null>(null);
 
+  // Modal anti-stacking guard: only one overlay can be active at a time
+  type ActiveModal = "cart" | "chat" | "shade" | "location" | null;
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+
+  const isCartOpen = activeModal === "cart";
+  const isChatOpen = activeModal === "chat";
+  const setIsCartOpen = useCallback((open: boolean) => setActiveModal(open ? "cart" : null), []);
+  const setIsChatOpen = useCallback((open: boolean) => setActiveModal(open ? "chat" : null), []);
+
   const [selectedBrand, setSelectedBrand] = useState<PaintBrand | "All">("All");
   const [selectedCategory, setSelectedCategory] = useState<PaintCategory | "All">("All");
   const [searchQuery, setSearchQuery] = useState("");
   
   const [currentLocation, setCurrentLocation] = useState<any>("Mango");
-  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const currentArea = typeof currentLocation === 'string' ? currentLocation : currentLocation.area;
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -134,9 +144,7 @@ export default function App() {
     };
   }, []);
 
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [trackingOrder, setTrackingOrder] = useState<OrderRecord | null>(null);
+  // isCartOpen / isChatOpen are derived from the modal guard set above
 
   const [globalSelectedShade, setGlobalSelectedShade] = useState<ShadeItem | null>(null);
 
@@ -149,6 +157,26 @@ export default function App() {
     isOpen: false,
   });
 
+  // Open shade picker with modal guard
+  const openShadePicker = useCallback((config: Omit<typeof shadeModalConfig, 'isOpen'>) => {
+    setActiveModal("shade");
+    setShadeModalConfig({ isOpen: true, ...config });
+  }, []);
+
+  const closeShadePicker = useCallback(() => {
+    setShadeModalConfig({ isOpen: false });
+    setActiveModal(null);
+  }, []);
+
+  // Open location picker with modal guard
+  const [isLocationPickerOpen, setIsLocationPickerOpenState] = useState(false);
+  const setIsLocationPickerOpen = useCallback((open: boolean) => {
+    setIsLocationPickerOpenState(open);
+    if (open) setActiveModal("location");
+    else setActiveModal((prev) => prev === "location" ? null : prev);
+  }, []);
+
+  const [trackingOrder, setTrackingOrder] = useState<OrderRecord | null>(null);
   const [showFlashBanner, setShowFlashBanner] = useState(true);
   const [dbProducts, setDbProducts] = useState<ProductItem[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
@@ -237,8 +265,7 @@ export default function App() {
   const handleClearCart = () => setCartItems([]);
 
   const handleOpenShadePicker = (product?: ProductItem, currentShade?: ShadeItem, isDirectAddToCart?: boolean) => {
-    setShadeModalConfig({
-      isOpen: true,
+    openShadePicker({
       product: product, 
       currentShade: currentShade || globalSelectedShade || undefined,
       isDirectAddToCart: isDirectAddToCart,
@@ -247,14 +274,12 @@ export default function App() {
 
   const handleSelectShadeFromModal = (shade: ShadeItem) => {
     if (shadeModalConfig.product && shadeModalConfig.isDirectAddToCart) {
-      // Picked from Catalog ProductCard -> Add to cart immediately
       handleAddToCart(
         shadeModalConfig.product,
         shadeModalConfig.product.packs.find((p) => p.volumeLiters === (shade as any).selectedPackSize) || shadeModalConfig.product.packs[0],
         shade,
       );
     } else {
-      // Picked from ProductDetailPage OR Global Banner -> Set the shade
       setGlobalSelectedShade(shade);
       if (!activeProduct) {
         setActiveTab("store");
@@ -263,7 +288,7 @@ export default function App() {
         }
       }
     }
-    setShadeModalConfig({ isOpen: false });
+    closeShadePicker();
   };
   
   const handleProceedToPayment = (orderData: any) => {
@@ -272,7 +297,7 @@ export default function App() {
     const RAZORPAY_KEY = "rzp_test_TdqYk79sH1g2Qn"; 
     
     if (typeof (window as any).Razorpay === 'undefined') {
-      alert("The Razorpay payment gateway failed to load. Please check your internet connection or restart the app.");
+      showToast("The Razorpay payment gateway failed to load. Please check your internet connection or restart the app.", "error");
       return;
     }
 
@@ -296,12 +321,12 @@ export default function App() {
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any){
         finalizeAndSaveOrder(orderData, `Razorpay (Failed)`, 'Failed');
-        alert("Payment Failed: " + response.error.description);
+        showToast("Payment Failed: " + response.error.description, "error");
       });
       
       rzp.open();
     } catch (e: any) {
-      alert("Error opening Razorpay: " + e.message);
+      showToast("Error opening Razorpay: " + e.message, "error");
     }
   };
 
@@ -350,33 +375,36 @@ export default function App() {
     let finalOrder = { ...newOrder, delivery_otp: generatedOtp } as any;
 
     if (user) {
-      try {
-        const { data, error } = await supabase.from("orders").insert({
-          user_id: user.id,
-          total_amount: Math.round(newOrder.total),
-          status: paymentStatus === 'Failed' ? 'failed' : 'paid',
-          items: newOrder.items,
-          delivery_address: newOrder.address,
-          delivery_otp: generatedOtp,
-          gst_details: {
-            payment_method: paymentMethod,
-            payment_status: paymentStatus
+      // Retry up to 3 times with 1s backoff
+      const insertPayload = {
+        user_id: user.id,
+        total_amount: Math.round(newOrder.total),
+        status: paymentStatus === 'Failed' ? 'failed' : 'paid',
+        items: newOrder.items,
+        delivery_address: newOrder.address,
+        delivery_otp: generatedOtp,
+        gst_details: { payment_method: paymentMethod, payment_status: paymentStatus }
+      };
+      let lastError: any = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const { data, error } = await supabase.from("orders").insert(insertPayload).select().single();
+          if (error) {
+            lastError = error;
+            if (attempt < 3) await new Promise(r => setTimeout(r, 1000 * attempt));
+          } else if (data) {
+            finalOrder = { ...newOrder, id: data.id, date: new Date(data.created_at).toLocaleString(), delivery_otp: generatedOtp };
+            lastError = null;
+            break;
           }
-        }).select().single();
-
-        if (error) {
-          console.error("Database Insert Error:", error);
-          alert("Could not save order to database. Check internet connection.");
-        } else if (data) {
-          finalOrder = {
-             ...newOrder,
-             id: data.id,
-             date: new Date(data.created_at).toLocaleString(),
-             delivery_otp: generatedOtp
-          };
+        } catch (err) {
+          lastError = err;
+          if (attempt < 3) await new Promise(r => setTimeout(r, 1000 * attempt));
         }
-      } catch (err) {
-        console.error("Failed to save to Supabase:", err);
+      }
+      if (lastError) {
+        console.error("Order save failed after 3 attempts:", lastError);
+        showToast("Order placed but could not sync to cloud. Check your Order History.", "warning");
       }
     }
 
@@ -391,8 +419,16 @@ export default function App() {
   };
 
   const handleReorder = (order: OrderRecord) => {
+    // Warn if cart already has items before silently replacing it
+    if (cartItems.length > 0) {
+      const confirmed = window.confirm(
+        `Your current cart has ${cartItems.length} item(s). Reordering will replace them. Continue?`
+      );
+      if (!confirmed) return;
+    }
     setCartItems(order.items);
     setIsCartOpen(true);
+    showToast(`${order.items.length} item(s) added to cart from your previous order.`, "success");
   };
 
   return (
@@ -834,7 +870,7 @@ export default function App() {
 
       <ShadePickerModal
         isOpen={shadeModalConfig.isOpen}
-        onClose={() => setShadeModalConfig({ isOpen: false })}
+        onClose={closeShadePicker}
         onSelectShade={handleSelectShadeFromModal}
         product={shadeModalConfig.product}
         currentSelectedShade={shadeModalConfig.currentShade}
