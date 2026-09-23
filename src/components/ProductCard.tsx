@@ -100,32 +100,37 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       </div>
 
       <div className="px-3 pb-3 flex flex-col">
-        {/* Compact Pack Size Selector */}
+        {/* Pack Size Selector with Comfortable Mobile Touch Targets */}
         <div className="mb-3">
-          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-            {product.packs.map((pack) => (
-              <button
-                key={pack.size}
-                onClick={() => setSelectedPack(pack)}
-                className={`shrink-0 px-2 py-1 text-[10px] font-bold rounded border transition-colors ${
-                  selectedPack.size === pack.size
-                    ? "bg-slate-100 border-slate-300 text-slate-900"
-                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
-                }`}
-              >
-                {pack.size}
-              </button>
-            ))}
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+            {product.packs.map((pack) => {
+              const isSelected = selectedPack.size === pack.size;
+              return (
+                <button
+                  key={pack.size}
+                  onClick={() => setSelectedPack(pack)}
+                  type="button"
+                  className={`shrink-0 min-h-[30px] px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+                    isSelected
+                      ? "bg-slate-900 border-slate-900 text-white shadow-xs scale-[1.02]"
+                      : "bg-slate-50/80 border-slate-200/80 text-slate-600 hover:bg-slate-100 hover:border-slate-300"
+                  }`}
+                  aria-pressed={isSelected}
+                >
+                  {pack.size}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Bottom Bar: Price, Shade Picker, and Q-Commerce Add Button */}
-        <div className="flex items-center justify-between gap-2 mt-auto pt-1">
+        <div className="flex items-center justify-between gap-2 mt-auto pt-1.5 border-t border-slate-100/70">
           
           {/* Price & Shade Group */}
           <div className="flex items-center gap-2 min-w-0">
             <div>
-              <div className="text-xs font-black text-slate-900 leading-none">
+              <div className="text-xs sm:text-sm font-black text-slate-900 leading-none">
                 ₹{selectedPack.price}
               </div>
               {selectedPack.originalPrice && selectedPack.originalPrice > selectedPack.price && (
@@ -138,8 +143,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {/* Tint/Shade Picker Button - Highly visible next to price */}
             {isTintable && (
               <button
+                type="button"
                 onClick={() => onOpenShadePicker(product)}
-                className="w-7 h-7 shrink-0 rounded-full bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center hover:bg-amber-100 transition-colors"
+                className="w-7 h-7 shrink-0 rounded-full bg-amber-50 border border-amber-200/70 text-amber-700 flex items-center justify-center hover:bg-amber-100 transition-transform active:scale-95 cursor-pointer shadow-xs"
                 title="Choose Color Shade"
               >
                 <Palette className="w-3.5 h-3.5" />
@@ -154,27 +160,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 Out of Stock
               </div>
             ) : existingCartItem ? (
-              <div className="flex items-center bg-emerald-600 text-white rounded-lg shadow-sm h-8 w-20">
+              <div className="flex items-center bg-emerald-600 text-white rounded-lg shadow-sm h-8 w-20 transition-transform active:scale-98">
                 <button
+                  type="button"
                   onClick={() => onUpdateQuantity(existingCartItem.id, existingCartItem.quantity - 1)}
-                  className="flex-1 h-full flex items-center justify-center hover:bg-white/20 rounded-l-lg transition-colors"
+                  className="flex-1 h-full flex items-center justify-center hover:bg-white/20 rounded-l-lg transition-colors cursor-pointer active:scale-90"
+                  aria-label="Decrease quantity"
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
-                <span className="w-6 text-center text-xs font-bold leading-none">
+                <span className="w-6 text-center text-xs font-bold leading-none select-none">
                   {existingCartItem.quantity}
                 </span>
                 <button
+                  type="button"
                   onClick={() => onUpdateQuantity(existingCartItem.id, existingCartItem.quantity + 1)}
-                  className="flex-1 h-full flex items-center justify-center hover:bg-white/20 rounded-r-lg transition-colors"
+                  className="flex-1 h-full flex items-center justify-center hover:bg-white/20 rounded-r-lg transition-colors cursor-pointer active:scale-90"
+                  aria-label="Increase quantity"
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
               <button
+                type="button"
                 onClick={() => onAddToCart(product, selectedPack, currentShade)}
-                className="h-8 w-20 bg-white border border-emerald-600 text-emerald-600 hover:bg-emerald-50 text-xs font-bold rounded-lg transition-colors uppercase tracking-wide active:scale-95 shadow-sm"
+                className="h-8 w-20 bg-white border border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white text-xs font-black rounded-lg transition-all duration-150 uppercase tracking-wide active:scale-90 shadow-xs cursor-pointer"
               >
                 Add
               </button>

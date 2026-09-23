@@ -40,6 +40,8 @@ import DeliveryDashboard from "./components/DeliveryDashboard";
 import { getDeliveryTime } from "./utils/delivery";
 import { ProductDetailPage } from "./components/ProductDetailPage"; 
 import { LegalPolicies } from "./components/LegalPolicies"; 
+import { SplashScreen } from "./components/SplashScreen";
+import { ProductSkeletonGrid } from "./components/ProductSkeleton"; 
 import {
   Zap,
   Palette,
@@ -74,6 +76,22 @@ export default function App() {
   >("store");
 
   const [activeProduct, setActiveProduct] = useState<ProductItem | null>(null);
+
+  // App opening visual splash state (shown once per session or on demand)
+  const [showSplash, setShowSplash] = useState(() => {
+    try {
+      return !sessionStorage.getItem("np_splash_viewed");
+    } catch {
+      return true;
+    }
+  });
+
+  const handleSplashComplete = useCallback(() => {
+    setShowSplash(false);
+    try {
+      sessionStorage.setItem("np_splash_viewed", "true");
+    } catch {}
+  }, []);
 
   // Modal anti-stacking guard: only one overlay can be active at a time
   type ActiveModal = "cart" | "chat" | "shade" | "location" | null;
@@ -433,6 +451,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex bg-[#f7f8f6] text-slate-950 font-sans selection:bg-emerald-200 selection:text-emerald-950">
+      {/* App Opening Visual Splash Screen */}
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       <style>{`
         @keyframes np-float {
           0%, 100% { transform: translate3d(0, 0, 0); }
@@ -719,23 +739,51 @@ export default function App() {
               </div>
 
               {isLoadingProducts ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4">
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <div key={i} className="rounded-3xl bg-white border border-slate-100 p-3 shadow-sm">
-                      <div className="aspect-square rounded-2xl bg-slate-100 animate-pulse" />
-                      <div className="mt-3 h-3 rounded bg-slate-100 animate-pulse w-3/4" />
-                      <div className="mt-2 h-3 rounded bg-slate-100 animate-pulse w-1/2" />
-                      <div className="mt-4 h-10 rounded-2xl bg-slate-100 animate-pulse" />
-                    </div>
-                  ))}
-                </div>
+                <ProductSkeletonGrid count={10} />
               ) : filteredProducts.length === 0 ? (
-                <div className="py-20 text-center bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
-                  <div className="mx-auto h-14 w-14 rounded-2xl bg-slate-100 flex items-center justify-center">
-                    <Search className="w-6 h-6 text-slate-300" />
+                <div className="py-14 px-6 text-center bg-white rounded-3xl border border-slate-200/80 shadow-sm max-w-xl mx-auto my-4 animate-in fade-in duration-200">
+                  <div className="mx-auto h-16 w-16 rounded-2xl bg-emerald-50 flex items-center justify-center mb-4">
+                    <Search className="w-8 h-8 text-emerald-600" />
                   </div>
-                  <h3 className="mt-4 font-black text-slate-700">No products found</h3>
-                  <p className="mt-1 text-xs text-slate-400">Try another shade, brand or category.</p>
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                    {searchQuery ? `No matches for "${searchQuery}"` : "No products found in this category"}
+                  </h3>
+                  <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+                    We couldn't find any products matching your current filters. Try one of our popular categories below or reset all filters.
+                  </p>
+                  
+                  {/* Quick suggestion search pills */}
+                  <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-400 w-full mb-1">POPULAR CATEGORIES & PICKS</span>
+                    {["Asian Paints", "Berger Paints", "Apex Ultima", "Tractor Emulsion", "Royale Luxury"].map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery(suggestion);
+                          setSelectedBrand("All");
+                          setSelectedCategory("All");
+                        }}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 transition cursor-pointer"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 pt-5 border-t border-slate-100 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSelectedBrand("All");
+                        setSelectedCategory("All");
+                      }}
+                      className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer active:scale-95"
+                    >
+                      Clear All Filters & Show All
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4">
@@ -859,10 +907,10 @@ export default function App() {
         </div>
       )}
 
-      {/* Floating consultant CTA */}
+      {/* Floating consultant CTA (desktop only, mobile has bottom bar) */}
       <button
         onClick={() => setIsChatOpen(true)}
-        className={`fixed right-4 z-[70] h-12 w-12 rounded-2xl bg-[#17362b] text-white shadow-[0_12px_32px_-12px_rgba(15,23,42,.7)] hover:scale-105 transition flex items-center justify-center cursor-pointer border border-white/10 ${totalCartCount > 0 ? "bottom-24" : "bottom-5"}`}
+        className={`fixed right-4 z-[70] h-12 w-12 rounded-2xl bg-[#17362b] text-white shadow-[0_12px_32px_-12px_rgba(15,23,42,.7)] hover:scale-105 transition hidden md:flex items-center justify-center cursor-pointer border border-white/10 ${totalCartCount > 0 ? "bottom-24" : "bottom-5"}`}
         aria-label="Open paint consultant"
       >
         <Sparkles className="w-5 h-5 text-emerald-300" />
@@ -922,6 +970,8 @@ export default function App() {
           else setActiveTab(tab);
         }}
         onOpenConsultantChat={() => setIsChatOpen(true)}
+        isChatOpen={isChatOpen}
+        unreadNotificationsCount={alerts.filter((a) => !a.read).length}
       />
       </div>
     </div>

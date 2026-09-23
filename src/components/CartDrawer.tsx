@@ -272,14 +272,38 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         {/* ADDRESS SCREEN */}
         {checkoutStep === "address" && (
           <>
-            <div className="px-6 py-5 border-b border-slate-100 bg-white flex items-center justify-between sticky top-0 z-10">
+            <div className="px-6 py-4 border-b border-slate-100 bg-white flex items-center justify-between sticky top-0 z-10">
               <div className="flex items-center gap-3">
-                <button onClick={() => setCheckoutStep("cart")} className="p-2 text-slate-400 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-50"><ArrowRight className="w-5 h-5 rotate-180" /></button>
+                <button onClick={() => setCheckoutStep("cart")} className="p-2 text-slate-400 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-50 cursor-pointer"><ArrowRight className="w-5 h-5 rotate-180" /></button>
                 <div>
-                  <h3 className="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Select Address</h3>
+                  <h3 className="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Delivery Address</h3>
                 </div>
               </div>
-              <button onClick={closeAndReset} className="p-2 text-slate-400 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-50"><X className="w-5 h-5" /></button>
+              <button onClick={closeAndReset} className="p-2 text-slate-400 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-50 cursor-pointer"><X className="w-5 h-5" /></button>
+            </div>
+
+            {/* Checkout Progress Stepper */}
+            <div className="px-6 py-2.5 bg-slate-50/90 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => setCheckoutStep("cart")}>
+                <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-black">
+                  ✓
+                </div>
+                <span className="text-[11px] font-bold text-emerald-800">Cart</span>
+              </div>
+              <div className="flex-1 mx-2.5 h-0.5 bg-emerald-500 rounded-full" />
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black shadow-xs">
+                  2
+                </div>
+                <span className="text-[11px] font-extrabold text-slate-900">Address</span>
+              </div>
+              <div className="flex-1 mx-2.5 h-0.5 bg-slate-200 rounded-full" />
+              <div className="flex items-center gap-1.5 opacity-60">
+                <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold">
+                  3
+                </div>
+                <span className="text-[11px] font-bold text-slate-500">Pay</span>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto bg-slate-50/50 p-6 pb-32 space-y-6">
               
@@ -397,7 +421,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         {/* CART SCREEN */}
         {checkoutStep === "cart" && (
           <>
-            <div className="px-6 py-5 border-b border-slate-100 bg-white flex items-center justify-between sticky top-0 z-10">
+            <div className="px-6 py-4 border-b border-slate-100 bg-white flex items-center justify-between sticky top-0 z-10">
               <div className="flex items-center gap-3">
                 <div className="bg-slate-100 p-2 rounded-full"><ShoppingBag className="w-5 h-5 text-slate-800" /></div>
                 <div>
@@ -405,8 +429,34 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <p className="text-xs text-slate-500 font-medium mt-1">{cartItems.reduce((acc, item) => acc + item.quantity, 0)} Items</p>
                 </div>
               </div>
-              <button onClick={closeAndReset} className="p-2 text-slate-400 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-50"><X className="w-5 h-5" /></button>
+              <button onClick={closeAndReset} className="p-2 text-slate-400 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-50 cursor-pointer"><X className="w-5 h-5" /></button>
             </div>
+
+            {/* Checkout Progress Stepper */}
+            {cartItems.length > 0 && (
+              <div className="px-6 py-2.5 bg-slate-50/90 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black shadow-xs">
+                    1
+                  </div>
+                  <span className="text-[11px] font-extrabold text-slate-900">Cart</span>
+                </div>
+                <div className="flex-1 mx-2.5 h-0.5 bg-slate-200 rounded-full" />
+                <div className="flex items-center gap-1.5 opacity-60">
+                  <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold">
+                    2
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-500">Address</span>
+                </div>
+                <div className="flex-1 mx-2.5 h-0.5 bg-slate-200 rounded-full" />
+                <div className="flex items-center gap-1.5 opacity-60">
+                  <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold">
+                    3
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-500">Pay</span>
+                </div>
+              </div>
+            )}
 
             <div className="flex-1 overflow-y-auto bg-slate-50/50 p-6 pb-32 space-y-6">
               {cartItems.length === 0 ? (
