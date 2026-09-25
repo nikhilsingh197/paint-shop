@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { Capacitor } from "@capacitor/core";
+import { PushNotifications } from "@capacitor/push-notifications";
 
 export interface SavedAddress {
   id: string;
@@ -29,6 +31,7 @@ export interface UserProfile {
   total_orders_count: number;
   total_litres_purchased: number;
   tier: 'Silver Painter' | 'Gold Pro' | 'Platinum Master';
+  fcm_token?: string;
 }
 
 interface AuthContextType {
@@ -55,11 +58,60 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const registerPushNotifications = async (userId: string) => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    try {
+      let permStatus = await PushNotifications.checkPermissions();
+      if (permStatus.receive === 'prompt') {
+        permStatus = await PushNotifications.requestPermissions();
+      }
+
+      if (permStatus.receive !== 'granted') {
+        return; // User denied permission
+      }
+
+      await PushNotifications.register();
+      await PushNotifications.createChannel({
+        id: 'orders',
+        name: 'Order Updates',
+        description: 'Notifications about your paint orders',
+        importance: 5,
+        visibility: 1
+      });
+
+      // Listen for registration success
+      PushNotifications.addListener('registration', async (token) => {
+        console.log('Push registration success, token: ' + token.value);
+        // Save the token to the user's profile
+        await supabase
+          .from('profiles')
+          .update({ fcm_token: token.value })
+          .eq('id', userId);
+      });
+
+      // Listen for registration error
+      PushNotifications.addListener('registrationError', (error: any) => {
+        console.error('Error on registration: ' + JSON.stringify(error));
+      });
+
+      // Listen for incoming notifications when app is open
+      PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        console.log('Push received: ', notification);
+        // We could trigger a local Toast here if we want!
+      });
+      
+    } catch (e) {
+      console.error("Failed to register push:", e);
+    }
+  };
+
   const loadProfile = async (userId: string) => {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
     
     if (data) {
       setProfile(data);
+      registerPushNotifications(userId);
     } else if (error && error.code === 'PGRST116') {
       // PGRST116 means "No rows found". Let's auto-create their profile!
       const newProfile = { 
@@ -69,7 +121,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         tier: 'Silver Painter' 
       };
       const { data: insertedData } = await supabase.from('profiles').insert(newProfile).select().single();
-      if (insertedData) setProfile(insertedData);
+      if (insertedData) {
+        setProfile(insertedData);
+        registerPushNotifications(userId);
+      }
     }
   };
 
@@ -106,9 +161,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
 
           if (event.url.includes('#access_token=')) {
-            // Supabase client automatically picks up URL hash fragments in standard setup,
-            // but for Capacitor, you may need to manually parse and set session if it doesn't.
-            const url = new URL(event.url.replace('#', '?')); // hack to parse hash as search params
+            const url = new URL(event.url.replace('#', '?'));
             const access_token = url.searchParams.get('access_token');
             const refresh_token = url.searchParams.get('refresh_token');
             if (access_token && refresh_token) {
@@ -122,6 +175,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription.unsubscribe();
       if (appListener) appListener.then((l: any) => l.remove());
+      if (Capacitor.isNativePlatform()) {
+        PushNotifications.removeAllListeners();
+      }
     };
   }, []);
 
@@ -140,8 +196,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .single();
     if (error) {
       console.error("Failed to update profile:", error);
-      // Note: AuthContext is above ToastProvider in the tree.
-      // Callers (ProfileSettingsModal etc.) should display their own error UI.
     }
     if (data) setProfile(data);
   };

@@ -170,10 +170,39 @@ export default function AdminDashboard() {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     setUpdatingId(orderId);
+    
+    // Get the order to know the user_id
+    const orderToUpdate = orders.find(o => o.id === orderId);
+    
     const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", orderId);
 
     if (!error) {
       setOrders(orders.map((o) => o.id === orderId ? { ...o, status: newStatus } : o));
+      
+      // If order is out for delivery or delivered, send push
+      if (orderToUpdate && (newStatus === "out_for_delivery" || newStatus === "delivered" || newStatus === "packed")) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('fcm_token')
+            .eq('id', orderToUpdate.user_id)
+            .single();
+            
+          if (profile && profile.fcm_token) {
+            const statusConfig = getStatusConfig(newStatus);
+            const title = "Order Update! 🎨";
+            const body = `Your order #${orderId.split("-")[0].toUpperCase()} is now ${statusConfig.label}.`;
+            
+            await fetch('/api/send-push', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: profile.fcm_token, title, body })
+            });
+          }
+        } catch (err) {
+          console.error("Failed to send push notification", err);
+        }
+      }
     }
     setUpdatingId(null);
   };

@@ -6,6 +6,8 @@ import crypto from "crypto";
 import path from "path";
 import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
+import { initializeApp, cert, getApps } from "firebase-admin/app";
+import { getMessaging } from "firebase-admin/messaging";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -14,7 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 10000; // Uses Render's dynamic port or defaults to 10000
 
 // Middleware
-// FIX: default express.json() limit is 100kb — any base64 photo in the chat
+// FIX: default express.json() limit is 100kb ?" any base64 photo in the chat
 // payload would 413 before reaching the handler. 10mb covers phone photos.
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
@@ -22,6 +24,22 @@ app.use(express.json({ limit: "10mb" }));
 // ---------------------------------------------------------
 // 0. STARTUP VALIDATION
 // ---------------------------------------------------------
+
+// Initialize Firebase Admin
+try {
+  const serviceAccountPath = path.join(process.cwd(), "firebase-service-account.json");
+  if (fs.existsSync(serviceAccountPath)) {
+    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+    initializeApp({
+      credential: cert(serviceAccount)
+    });
+    console.log("🔥 Firebase Admin initialized successfully.");
+  } else {
+    console.warn("⚠️ firebase-service-account.json not found. Push notifications will not work.");
+  }
+} catch (error) {
+  console.error("❌ Failed to initialize Firebase Admin:", error);
+}
 
 if (!process.env.GEMINI_API_KEY) {
   console.error("❌ GEMINI_API_KEY is missing — AI consultant will not work.");
@@ -176,6 +194,45 @@ IMPORTANT: When suggesting a color, ALWAYS mention its exact 4-digit or alphanum
   } catch (error: any) {
     console.error("Gemini AI Chat Error:", error);
     res.status(500).json({ reply: `I apologize, but my AI system is currently unavailable. Developer Error: ${error.message}` });
+  }
+});
+
+// ---------------------------------------------------------
+// 2.5 PUSH NOTIFICATIONS API
+// ---------------------------------------------------------
+
+app.post("/api/send-push", async (req, res) => {
+  try {
+    const { token, title, body, data } = req.body;
+    
+    if (!token || !title || !body) {
+      return res.status(400).json({ success: false, message: "Missing token, title, or body" });
+    }
+
+    if (!getApps().length) {
+      return res.status(500).json({ success: false, message: "Firebase admin not initialized" });
+    }
+
+    const message = {
+      token: token,
+      notification: {
+        title,
+        body
+      },
+      data: data || {},
+      android: {
+        priority: 'high' as const,
+        notification: {
+          channelId: 'orders'
+        }
+      }
+    };
+
+    const response = await getMessaging().send(message);
+    res.json({ success: true, response });
+  } catch (error: any) {
+    console.error("Push notification failed:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
